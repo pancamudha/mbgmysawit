@@ -1,0 +1,64 @@
+import { fetchApi } from '@/lib/api';
+import HeroCarousel from '@/components/HeroCarousel';
+import GenreBar from '@/components/GenreBar';
+import WelcomeBanner from '@/components/WelcomeBanner';
+import LatestCompleted from '@/components/LatestCompleted';
+import LatestEpisodes from '@/components/LatestEpisodes';
+import TabbedAnimeSection from '@/components/TabbedAnimeSection';
+import TopUpcoming from '@/components/TopUpcoming';
+
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const response = await fetchApi('/home');
+  const ongoingAnime = response?.data?.ongoing_anime || [];
+  const completeAnime = response?.data?.complete_anime || [];
+  
+  // Menggabungkan array untuk simulasi tab "Top Airing", "Most Popular", dll
+  const combinedAnimes = [...ongoingAnime, ...completeAnime];
+  
+  // Membalik array ongoing untuk simulasi data Top Upcoming sementara
+  const upcomingSimulation = [...ongoingAnime].reverse(); 
+
+  return (
+    <main className="w-full">
+      {/* 1. HERO CAROUSEL */}
+      <HeroCarousel animes={ongoingAnime} />
+
+      {/* 2. GENRE BAR */}
+      {/* MAGISNYA DI SINI: Memberikan jarak sedikit (mt-3 sm:mt-4) agar tidak terlalu menempel dengan Hero */}
+      <div className="mt-1 sm:mt-2">
+        <GenreBar />
+      </div>
+
+      {/* 3. KONTEN BAWAH (DUA KOLOM DI DESKTOP) */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-12">
+        <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
+          
+          {/* KOLOM KIRI (Konten Utama) */}
+          <div className="flex-1 min-w-0">
+            <WelcomeBanner />
+            <LatestEpisodes animes={ongoingAnime} />
+            
+            {/* Negative margin (-mt-4 sm:-mt-6) untuk menarik Tabbed Section ke atas agar lebih rapat! */}
+            <div className="-mt-2 sm:-mt-4 relative z-10">
+              <TabbedAnimeSection animes={combinedAnimes} />
+            </div>
+          </div>
+
+          {/* KOLOM KANAN (Sidebar) */}
+          <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0">
+            {/* Widget 1: Latest Completed */}
+            <LatestCompleted animes={completeAnime} />
+            
+            {/* Widget 2: Top Upcoming (Dengan jarak mt-8 agar terpisah rapi) */}
+            <div className="mt-8">
+              <TopUpcoming animes={upcomingSimulation} />
+            </div>
+          </aside>
+
+        </div>
+      </div>
+    </main>
+  );
+}
