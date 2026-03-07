@@ -34,7 +34,6 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Logika Items Per Page Dinamis
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1280) {
@@ -140,12 +139,15 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
                     </h3>
                   </div>
 
-                  <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wide">
-                    <span>{showType}</span>
-                    <span className="flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      {releaseYear}
-                    </span>
+                  {/* PERUBAHAN DI SINI: flex-col di mobile, flex-row di desktop */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-2 text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wide">
+                    <div className="flex items-center gap-2">
+                      <span>{showType}</span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        {releaseYear}
+                      </span>
+                    </div>
                     {epsCount && (
                       <span className="flex items-center gap-1">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>

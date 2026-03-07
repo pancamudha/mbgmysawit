@@ -19,27 +19,23 @@ interface AnimeItem {
 
 export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] }) {
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Default desktop
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Logika Items Per Page Dinamis
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1280) {
-        // Desktop (xl): 10 item (5 kolom x 2 baris)
         setItemsPerPage(10);
       } else {
-        // Tablet & Mobile: 12 item (4x3 atau 3x4)
         setItemsPerPage(12);
       }
     };
     
-    handleResize(); // Jalankan saat pertama kali render
+    handleResize(); 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
   const totalPages = Math.max(1, Math.ceil(animes.length / itemsPerPage));
-  // Mencegah blank page jika resize menyebabkan currentPage melebihi totalPages
   const safePage = Math.min(currentPage, totalPages - 1);
 
   const handlePrev = () => setCurrentPage((prev) => (prev > 0 ? prev - 1 : 0));
@@ -116,12 +112,15 @@ export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] })
                 </h3>
               </div>
               
-              <div className="flex items-center gap-2 mt-1 text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wide">
-                <span>{showType}</span>
-                <span className="flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  {releaseYear}
-                </span>
+              {/* PERUBAHAN DI SINI: flex-col di mobile, flex-row di desktop */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-2 mt-1 text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wide">
+                <div className="flex items-center gap-2">
+                  <span>{showType}</span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    {releaseYear}
+                  </span>
+                </div>
                 {epsCount && (
                   <span className="flex items-center gap-1">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
