@@ -78,6 +78,16 @@ export default function Navbar() {
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
+  // Handle tekan Enter untuk pencarian
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && query.trim().length > 0) {
+      setShowDropdown(false);
+      setShowMobileSearch(false);
+      router.push(`/search/${encodeURIComponent(query.trim())}`);
+      setQuery('');
+    }
+  };
+
   // FUNGSI RANDOM ANIME MENGGUNAKAN ENDPOINT RESMI API
   const handleRandomAnime = async () => {
     if (isRandomLoading) return;
@@ -107,62 +117,90 @@ export default function Navbar() {
   };
 
   const renderDropdown = () => (
-    <div className="fixed md:absolute top-[65px] md:top-full left-4 right-4 md:left-0 md:right-auto md:w-full mt-0 md:mt-2 max-h-[65vh] md:max-h-[400px] overflow-y-auto bg-[#141414] md:bg-[#0F0F0F] border border-[#2A2A2E] rounded-xl shadow-2xl z-[100] flex flex-col [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] [&::-webkit-scrollbar-thumb]:rounded-full">
+    <div className="fixed md:absolute top-[65px] md:top-full left-4 right-4 md:left-0 md:right-auto md:w-full mt-0 md:mt-2 max-h-[70vh] md:max-h-[500px] bg-[#141414] md:bg-[#0F0F0F] border border-[#2A2A2E] rounded-xl shadow-2xl z-[100] flex flex-col overflow-hidden">
       {isSearching ? (
-        <div className="p-5 text-center text-sm text-[#8C8C8C] flex flex-col items-center justify-center gap-3">
+        <div className="p-8 text-center text-sm text-[#8C8C8C] flex flex-col items-center justify-center gap-3">
           <svg className="animate-spin h-6 w-6 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="font-medium tracking-wide">Mencari anime...</span>
+          <span className="font-medium tracking-wide">Searching anime...</span>
         </div>
       ) : results.length > 0 ? (
-        <div className="p-1.5 flex flex-col gap-1">
-          {results.slice(0, 6).map((anime: any, idx: number) => (
-            <Link 
-              href={`/anime/${anime.id}`} 
-              key={idx} 
-              onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
-              className="group flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
-            >
-              <div className="w-10 sm:w-11 aspect-[3/4] rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 shadow-sm relative">
-                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              </div>
-              <div className="flex flex-col py-0.5 pr-2 flex-1">
-                <h4 className="text-[13px] sm:text-[14px] font-bold text-slate-200 group-hover:text-white line-clamp-2 leading-snug mb-1">
-                  {anime.title}
-                </h4>
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wider">
-                  <span className={anime.tvInfo?.showType === 'Completed' ? 'text-indigo-400' : 'text-emerald-400'}>
-                    {anime.tvInfo?.showType || 'ANIME'}
-                  </span>
-                  {anime.tvInfo?.sub && (
-                    <>
-                      <span className="text-[#4A4A4E]">•</span>
-                      <span className="flex items-center gap-0.5">
-                         {anime.tvInfo.sub} Eps
-                      </span>
-                    </>
-                  )}
+        <>
+          {/* === HEADER SUGGESTIONS (DIPERKECIL) === */}
+          <div className="flex justify-between items-center px-3 py-2 border-b border-[#2A2A2E] shrink-0 bg-[#0A0A0A]/50">
+            <span className="text-[10px] font-bold text-[#8C8C8C] tracking-wider uppercase">Suggestions</span>
+            <span className="text-[10px] font-medium text-[#8C8C8C]">{results.length} results</span>
+          </div>
+
+          {/* === LIST ANIME === */}
+          <div className="p-1.5 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] [&::-webkit-scrollbar-thumb]:rounded-full">
+            {results.slice(0, 5).map((anime: any, idx: number) => (
+              <Link 
+                href={`/anime/${anime.id}`} 
+                key={idx} 
+                onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
+                className="group/item relative flex items-center gap-3.5 p-2 rounded-xl overflow-hidden bg-[#141414] border border-transparent hover:border-white/10 active:border-white/10 transition-all duration-300 shrink-0"
+              >
+                {/* === BACKGROUND BANNER === */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={anime.poster} alt="" className="w-full h-full object-cover scale-105 grayscale opacity-[0.25] group-hover/item:grayscale-0 group-hover/item:translate-x-[6px] group-hover/item:opacity-[0.6] group-active/item:grayscale-0 group-active/item:translate-x-[6px] group-active/item:opacity-[0.6] transition-all duration-500 ease-out" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/80 to-transparent" />
                 </div>
-              </div>
-            </Link>
-          ))}
-          
-          {results.length > 6 && (
-             <Link href={`/search/${query}`} onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} className="text-center p-2.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors bg-white/[0.02] hover:bg-white/[0.04] rounded-lg mt-1">
-               Lihat semua {results.length} hasil pencarian
+
+                {/* === THUMBNAIL POSTER === */}
+                <div className="w-10 sm:w-[46px] aspect-[4/5] rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 relative z-10 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
+                   {/* eslint-disable-next-line @next/next/no-img-element */}
+                   <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover" />
+                </div>
+
+                {/* === TEXT INFO === */}
+                <div className="flex flex-col flex-1 py-0.5 pr-2 z-10 transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
+                  <h4 className="text-[13px] sm:text-[14px] font-bold text-slate-200 group-hover/item:text-white/90 group-active/item:text-white/90 line-clamp-2 leading-snug mb-1 drop-shadow-md transition-colors">
+                    {anime.title}
+                  </h4>
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-[#8C8C8C] uppercase tracking-wider drop-shadow-md">
+                    <span className={anime.tvInfo?.showType === 'Completed' ? 'text-indigo-400' : 'text-emerald-400'}>
+                      {anime.tvInfo?.showType || 'TV'}
+                    </span>
+                    {anime.tvInfo?.sub && (
+                      <>
+                        <span className="text-[#4A4A4E]">•</span>
+                        <span className="flex items-center gap-0.5 text-white/80">
+                           {anime.tvInfo.sub} Eps
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* === FOOTER PRESS ENTER (IKON DIPERKECIL) === */}
+          <div className="border-t border-[#2A2A2E] py-2.5 px-3 flex justify-center shrink-0 bg-[#0A0A0A]/50">
+             <Link 
+               href={`/search/${query}`} 
+               onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
+               className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white transition-colors"
+             >
+               Press Enter for all results
+               <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                 <circle cx="11" cy="11" r="8"></circle>
+                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+               </svg>
              </Link>
-          )}
-        </div>
+          </div>
+        </>
       ) : (
         <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
           <svg className="w-10 h-10 text-[#4A4A4E] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="text-sm font-bold text-white">Aduh, tidak ditemukan!</span>
-          <span className="text-[13px] text-[#8C8C8C]">Coba gunakan kata kunci yang berbeda.</span>
+          <span className="text-sm font-bold text-white">Oops, not found!</span>
+          <span className="text-[13px] text-[#8C8C8C]">Try using different keywords.</span>
         </div>
       )}
     </div>
@@ -196,8 +234,9 @@ export default function Navbar() {
             
             <input 
               type="text" value={query} onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)}
+              onKeyDown={handleKeyDown}
               className={`block w-full h-full pl-11 pr-10 border border-[#2A2A2E] focus:border-[#3A3A3E] rounded-[10px] text-slate-200 placeholder-[#8C8C8C] focus:outline-none transition-all text-[15px] font-medium ${isScrolled ? 'bg-[#0F0F0F]/60 focus:bg-[#161616]/80' : 'bg-[#0F0F0F] focus:bg-[#161616]'}`} 
-              placeholder="Search anime" 
+              placeholder="Search anime..." 
             />
             
             {query && (
@@ -241,8 +280,9 @@ export default function Navbar() {
               <input 
                 autoFocus
                 type="text" value={query} onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)}
+                onKeyDown={handleKeyDown}
                 className={`block w-full h-full pl-10 pr-10 border border-[#2A2A2E] focus:border-[#3A3A3E] rounded-[10px] text-slate-200 placeholder-[#8C8C8C] focus:outline-none transition-all text-[15px] font-medium ${isScrolled ? 'bg-[#0F0F0F]/60' : 'bg-[#0F0F0F]'}`} 
-                placeholder="Search anime" 
+                placeholder="Search anime..." 
               />
               
               {query && (
