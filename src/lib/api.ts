@@ -87,7 +87,7 @@ export async function getAnilistCharacters(anilistId: string | number) {
   const query = `
     query ($id: Int) {
       Media (id: $id) {
-        characters (sort: [ROLE, RELEVANCE, ID], perPage: 12) {
+        characters (sort: [ROLE, RELEVANCE, ID], perPage: 100) {
           edges {
             role
             node {
@@ -144,6 +144,77 @@ export async function getAnilistCharacters(anilistId: string | number) {
     });
   } catch (error) {
     console.error("Gagal mengambil karakter dari AniList:", error);
+  }
+
+  return [];
+}
+
+// ====================================================================
+// FUNGSI SMART FALLBACK SINKRONISASI MYANIMELIST (VIA JIKAN API)
+// ====================================================================
+
+export async function getMalTrailer(malId: string | number) {
+  if (!malId) return [];
+
+  try {
+    // Menggunakan Jikan API (Public MAL API)
+    const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}`, { 
+      next: { revalidate: 86400 } 
+    });
+    
+    const result = await res.json();
+    const trailer = result?.data?.trailer;
+
+    if (trailer && trailer.youtube_id) {
+      return [{
+        title: "Official Trailer (MAL Sync)",
+        url: `https://www.youtube.com/embed/${trailer.youtube_id}?rel=0`,
+        thumbnail: trailer.images?.maximum_image_url || `https://img.youtube.com/vi/${trailer.youtube_id}/hqdefault.jpg`
+      }];
+    }
+  } catch (error) {
+    console.error("Gagal mengambil trailer dari MyAnimeList:", error);
+  }
+
+  return [];
+}
+
+
+export async function getMalCharacters(malId: string | number) {
+  if (!malId) return [];
+
+  try {
+    const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}/characters`, { 
+      next: { revalidate: 86400 } 
+    });
+    
+    const result = await res.json();
+    const data = result?.data || [];
+
+    // Ambil maksimal 12 karakter seperti batas UI kita
+    const topCharacters = data.slice(0, 100);
+
+    return topCharacters.map((item: any) => {
+      const char = item.character;
+      // Cari voice actor Jepang
+      const va = item.voice_actors?.find((v: any) => v.language === "Japanese")?.person;
+
+      return {
+        character: {
+          id: char?.mal_id?.toString() || "",
+          poster: char?.images?.jpg?.image_url || char?.images?.webp?.image_url || "",
+          name: char?.name || "",
+          cast: item.role || "Supporting"
+        },
+        voiceActors: va ? [{
+          id: va.mal_id?.toString() || "",
+          poster: va.images?.jpg?.image_url || "",
+          name: va.name || ""
+        }] : []
+      };
+    });
+  } catch (error) {
+    console.error("Gagal mengambil karakter dari MyAnimeList:", error);
   }
 
   return [];

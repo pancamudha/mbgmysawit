@@ -2,8 +2,10 @@
 
 import React from 'react';
 
-export default function AnimeTrailer({ trailer }: { trailer: any }) {
+export default function AnimeTrailer({ trailer, hasRelated = false }: { trailer: any, hasRelated?: boolean }) {
   const hasTrailer = !!trailer?.url;
+  
+  if (!hasTrailer) return null;
 
   return (
     <div className="w-full h-full flex flex-col gap-4">
@@ -14,30 +16,23 @@ export default function AnimeTrailer({ trailer }: { trailer: any }) {
 
       <div 
         className={`w-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-2xl relative group ${
-            hasTrailer 
+            hasRelated 
+            // Jika ada sidebar related, kunci tinggi trailer sejajar dengan 4 card (568px)
             ? 'aspect-video lg:aspect-auto lg:h-[568px]' 
-            : 'h-full min-h-[130px]'
+            // Jika tidak ada sidebar related (Full Width), gunakan natural aspect-video 16:9
+            : 'aspect-video'
         }`}
       >
         <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 pointer-events-none"></div>
         
         <div className="relative w-full h-full bg-[#0A0A0B] rounded-xl overflow-hidden z-10">
-            {hasTrailer ? (
-                <iframe 
-                className="w-full h-full"
-                src={trailer.url} 
-                title={trailer.title || "YouTube video player"} 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-                />
-            ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0F0F0F] text-[#8C8C8C]">
-                    <svg className="w-12 h-12 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <p className="font-medium text-sm">Trailer belum tersedia</p>
-                </div>
-            )}
+            <iframe 
+               className="w-full h-full"
+               src={trailer.url} 
+               title={trailer.title || "YouTube video player"} 
+               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+               allowFullScreen
+            />
         </div>
       </div>
     </div>

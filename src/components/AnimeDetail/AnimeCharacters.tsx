@@ -5,20 +5,8 @@ import React, { useState } from 'react';
 export default function AnimeCharacters({ characters }: { characters?: any[] }) {
   const [isViewAll, setIsViewAll] = useState(false);
 
-  if (!characters || characters.length === 0) {
-      return (
-        <div className="w-full">
-            <h2 className="text-xl sm:text-[22px] font-bold tracking-tight text-white mb-4 sm:mb-5 flex items-center gap-2.5">
-              Characters
-            </h2>
-            <div className="w-full h-[100px] border border-white/5 rounded-xl bg-[#141414]/40 flex items-center justify-center">
-                <span className="text-[#8C8C8C] text-[13px] sm:text-sm font-medium px-4 text-center">
-                  Data karakter belum tersedia.
-                </span>
-            </div>
-        </div>
-      );
-  }
+  // Jika karakter kosong, komponen hancur/hilang (tanpa placeholder)
+  if (!characters || characters.length === 0) return null;
 
   return (
     <div className="w-full">
@@ -30,7 +18,6 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
         {characters.length > 4 && (
           <button 
             onClick={() => setIsViewAll(!isViewAll)}
-            // Tambahkan md:hidden jika karakter <= 12 agar tombol View All tidak muncul di desktop jika tidak dibutuhkan
             className={`text-[12px] sm:text-[13px] font-semibold text-[#8C8C8C] hover:text-white transition-colors flex items-center gap-1 ${characters.length <= 12 ? 'md:hidden' : ''}`}
           >
             {isViewAll ? 'Show Less' : 'View All'}
@@ -49,7 +36,6 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
           
           let displayClass = "flex"; 
           if (!isViewAll) {
-             // PERUBAHAN: Index >= 12 di-hidden (desktop max 12), index >= 4 hidden di mobile (mobile max 4)
              if (index >= 12) displayClass = "hidden"; 
              else if (index >= 4) displayClass = "hidden md:flex"; 
           }
@@ -63,7 +49,6 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
               className={`group items-center justify-between bg-[#0F0F0F] border border-[#1F1F1F] rounded-xl p-2.5 transition-colors hover:border-[#3A3A3E] active:border-[#3A3A3E] shadow-sm ${displayClass}`}
             >
               
-              {/* Kiri: Karakter */}
               <div className="flex items-center gap-3 w-1/2 overflow-hidden">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 border border-[#1F1F1F]/50">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -79,7 +64,6 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
                 </div>
               </div>
 
-              {/* Kanan: Seiyuu */}
               {va ? (
                 <div className="flex items-center justify-end gap-3 w-1/2 overflow-hidden text-right">
                   <div className="flex flex-col min-w-0 pl-2">
