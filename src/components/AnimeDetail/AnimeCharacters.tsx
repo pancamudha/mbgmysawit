@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 export default function AnimeCharacters({ characters }: { characters?: any[] }) {
   const [isViewAll, setIsViewAll] = useState(false);
 
-  // === BAGIAN 1: EMPTY STATE ===
   if (!characters || characters.length === 0) {
       return (
         <div className="w-full">
@@ -21,11 +20,8 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
       );
   }
 
-  // === BAGIAN 2: CONTENT STATE ===
   return (
     <div className="w-full">
-      
-      {/* Header with View All Button */}
       <div className="flex items-center justify-between mb-4 sm:mb-5">
         <h2 className="text-xl sm:text-[22px] font-bold tracking-tight text-white flex items-center gap-2.5">
           Characters
@@ -34,7 +30,8 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
         {characters.length > 4 && (
           <button 
             onClick={() => setIsViewAll(!isViewAll)}
-            className="text-[12px] sm:text-[13px] font-semibold text-[#8C8C8C] hover:text-white transition-colors flex items-center gap-1"
+            // Tambahkan md:hidden jika karakter <= 12 agar tombol View All tidak muncul di desktop jika tidak dibutuhkan
+            className={`text-[12px] sm:text-[13px] font-semibold text-[#8C8C8C] hover:text-white transition-colors flex items-center gap-1 ${characters.length <= 12 ? 'md:hidden' : ''}`}
           >
             {isViewAll ? 'Show Less' : 'View All'}
             <svg 
@@ -47,15 +44,18 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
         )}
       </div>
 
-      {/* Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {characters.map((char, index) => {
+        {characters.map((item, index) => {
           
           let displayClass = "flex"; 
           if (!isViewAll) {
-             if (index >= 8) displayClass = "hidden"; 
+             // PERUBAHAN: Index >= 12 di-hidden (desktop max 12), index >= 4 hidden di mobile (mobile max 4)
+             if (index >= 12) displayClass = "hidden"; 
              else if (index >= 4) displayClass = "hidden md:flex"; 
           }
+
+          const char = item.character;
+          const va = item.voiceActors?.[0];
 
           return (
             <div 
@@ -67,24 +67,24 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
               <div className="flex items-center gap-3 w-1/2 overflow-hidden">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 border border-[#1F1F1F]/50">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                   <img src={char.image} alt={char.name} className="w-full h-full object-cover" />
+                   <img src={char?.poster} alt={char?.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex flex-col min-w-0 pr-2">
-                  <span className="text-[13px] sm:text-[14px] font-bold text-slate-200 line-clamp-1 truncate" title={char.name}>
-                    {char.name}
+                  <span className="text-[13px] sm:text-[14px] font-bold text-slate-200 line-clamp-1 truncate" title={char?.name}>
+                    {char?.name}
                   </span>
                   <span className="text-[10px] sm:text-[11px] text-[#8C8C8C] font-medium mt-0.5 capitalize tracking-wide">
-                    {char.role ? char.role.toLowerCase() : ''}
+                    {char?.cast ? char.cast.toLowerCase() : ''}
                   </span>
                 </div>
               </div>
 
               {/* Kanan: Seiyuu */}
-              {char.voice_actor ? (
+              {va ? (
                 <div className="flex items-center justify-end gap-3 w-1/2 overflow-hidden text-right">
                   <div className="flex flex-col min-w-0 pl-2">
-                    <span className="text-[13px] sm:text-[14px] font-bold text-[#8C8C8C] line-clamp-1 truncate" title={char.voice_actor.name}>
-                      {char.voice_actor.name}
+                    <span className="text-[13px] sm:text-[14px] font-bold text-[#8C8C8C] line-clamp-1 truncate" title={va.name}>
+                      {va.name}
                     </span>
                     <span className="text-[10px] sm:text-[11px] text-[#555] font-medium mt-0.5">
                       Voice Actor
@@ -92,10 +92,9 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
                   </div>
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 border border-[#1F1F1F]/50">
                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                     {/* PERUBAHAN: Ditambahkan 'group-active:grayscale-0 group-active:opacity-100' untuk support HP */}
                      <img 
-                        src={char.voice_actor.image} 
-                        alt={char.voice_actor.name} 
+                        src={va.poster} 
+                        alt={va.name} 
                         className="w-full h-full object-cover grayscale opacity-80 transition-all duration-300 group-hover:grayscale-0 group-hover:opacity-100 group-active:grayscale-0 group-active:opacity-100" 
                      />
                   </div>
@@ -110,7 +109,6 @@ export default function AnimeCharacters({ characters }: { characters?: any[] }) 
           );
         })}
       </div>
-
     </div>
   );
 }

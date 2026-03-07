@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import Router untuk redirect
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const router = useRouter(); // Inisialisasi Router
+  const router = useRouter(); 
   const [isScrolled, setIsScrolled] = useState(false);
   
   // === STATE UNTUK LIVE SEARCH ===
@@ -21,7 +21,6 @@ export default function Navbar() {
   const desktopSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
 
-  // Efek Navbar Scrolled
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 20) {
@@ -34,7 +33,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Efek Klik Di Luar Dropdown untuk menutupnya
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -49,22 +47,19 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Efek Fetch Live Search dengan Debounce (Jeda 500ms agar API tidak spam)
+  // Efek Fetch Live Search menggunakan API bowotheexplorer
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (query.trim().length >= 2) {
         setIsSearching(true);
         setShowDropdown(true);
         try {
-          const res = await fetch(`https://animaple-core.vercel.app/api/search/${encodeURIComponent(query.trim())}`);
+          const res = await fetch(`https://bowotheexplorer.vercel.app/api/search?keyword=${encodeURIComponent(query.trim())}&page=1`);
           if (!res.ok) throw new Error("Fetch failed");
-          const data = await res.json();
+          const json = await res.json();
           
-          // Mengakomodasi berbagai format response API
-          if (data?.data && Array.isArray(data.data)) {
-            setResults(data.data);
-          } else if (Array.isArray(data)) {
-            setResults(data);
+          if (json?.results?.data && Array.isArray(json.results.data)) {
+            setResults(json.results.data);
           } else {
             setResults([]);
           }
@@ -83,37 +78,27 @@ export default function Navbar() {
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
-  // === FUNGSI RANDOM ANIME (Workaround tanpa endpoint khusus) ===
+  // FUNGSI RANDOM ANIME MENGGUNAKAN ENDPOINT RESMI API
   const handleRandomAnime = async () => {
     if (isRandomLoading) return;
     setIsRandomLoading(true);
 
     try {
-      // Trik: Cari huruf acak a-z untuk mendapatkan pool data
-      const randomChar = String.fromCharCode(97 + Math.floor(Math.random() * 26)); 
-      
-      const res = await fetch(`https://animaple-core.vercel.app/api/search/${randomChar}`);
+      const res = await fetch(`https://bowotheexplorer.vercel.app/api/random`);
       if (!res.ok) throw new Error("Gagal mengambil data random");
       
       const json = await res.json();
-      const list = json.data || (Array.isArray(json) ? json : []);
+      const randomAnime = json?.results?.data; // Tergantung struktur respon endpoint random
 
-      if (list.length > 0) {
-        // Pilih 1 index acak dari hasil pencarian
-        const randomIndex = Math.floor(Math.random() * list.length);
-        const randomAnime = list[randomIndex];
-        
-        // Redirect ke halaman anime tersebut
-        router.push(`/anime/${randomAnime.slug}`);
+      if (randomAnime && randomAnime.id) {
+        router.push(`/anime/${randomAnime.id}`);
       } else {
-        // Fallback jika huruf tersebut tidak menghasilkan apa-apa (jarang terjadi)
-        console.warn("Tidak menemukan anime, coba lagi.");
+        console.warn("Gagal mendapatkan anime acak.");
       }
     } catch (error) {
       console.error("Error random anime:", error);
     } finally {
-      // Delay sedikit agar animasi loading terasa (opsional)
-      setTimeout(() => setIsRandomLoading(false), 500);
+      setIsRandomLoading(false);
     }
   };
 
@@ -121,9 +106,7 @@ export default function Navbar() {
     document.body.classList.toggle('sidebar-expanded');
   };
 
-  // Komponen UI Dropdown Live Search yang dipakai ulang (Desktop & Mobile)
   const renderDropdown = () => (
-    // Menggunakan fixed di mobile agar melebar leluasa, dan absolute di desktop agar sejajar input
     <div className="fixed md:absolute top-[65px] md:top-full left-4 right-4 md:left-0 md:right-auto md:w-full mt-0 md:mt-2 max-h-[65vh] md:max-h-[400px] overflow-y-auto bg-[#141414] md:bg-[#0F0F0F] border border-[#2A2A2E] rounded-xl shadow-2xl z-[100] flex flex-col [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] [&::-webkit-scrollbar-thumb]:rounded-full">
       {isSearching ? (
         <div className="p-5 text-center text-sm text-[#8C8C8C] flex flex-col items-center justify-center gap-3">
@@ -137,7 +120,7 @@ export default function Navbar() {
         <div className="p-1.5 flex flex-col gap-1">
           {results.slice(0, 6).map((anime: any, idx: number) => (
             <Link 
-              href={`/anime/${anime.slug}`} 
+              href={`/anime/${anime.id}`} 
               key={idx} 
               onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
               className="group flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
@@ -151,15 +134,14 @@ export default function Navbar() {
                   {anime.title}
                 </h4>
                 <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wider">
-                  <span className={anime.status?.toLowerCase() === 'completed' ? 'text-indigo-400' : 'text-emerald-400'}>
-                    {anime.status || 'ANIME'}
+                  <span className={anime.tvInfo?.showType === 'Completed' ? 'text-indigo-400' : 'text-emerald-400'}>
+                    {anime.tvInfo?.showType || 'ANIME'}
                   </span>
-                  {anime.rating && (
+                  {anime.tvInfo?.sub && (
                     <>
                       <span className="text-[#4A4A4E]">•</span>
-                      <span className="flex items-center gap-0.5 text-yellow-500">
-                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                         {anime.rating}
+                      <span className="flex items-center gap-0.5">
+                         {anime.tvInfo.sub} Eps
                       </span>
                     </>
                   )}
@@ -168,7 +150,6 @@ export default function Navbar() {
             </Link>
           ))}
           
-          {/* Tombol Lihat Semua jika lebih dari 6 */}
           {results.length > 6 && (
              <Link href={`/search/${query}`} onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} className="text-center p-2.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors bg-white/[0.02] hover:bg-white/[0.04] rounded-lg mt-1">
                Lihat semua {results.length} hasil pencarian
@@ -176,7 +157,6 @@ export default function Navbar() {
           )}
         </div>
       ) : (
-        // UI JIKA TIDAK DITEMUKAN
         <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
           <svg className="w-10 h-10 text-[#4A4A4E] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -191,12 +171,8 @@ export default function Navbar() {
   return (
     <header className={`fixed top-0 left-0 w-full h-[60px] z-50 transition-all duration-300 border-b border-[#2A2A2E] ${isScrolled ? 'bg-[#0A0A0A]/80 backdrop-blur-xl shadow-xl' : 'bg-[#0A0A0A]'}`}>
       
-      {/* MAGISNYA DI SINI: Wrapper dengan max-w-[1600px] agar margin kiri-kanan sejajar sama konten utama */}
       <div className="flex items-center justify-between w-full h-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* =========================================
-            KIRI: HAMBURGER & LOGO 
-            ========================================= */}
         <div className={`flex items-center gap-3 sm:gap-5 shrink-0 ${showMobileSearch ? 'hidden md:flex' : 'flex'}`}>
           <button onClick={toggleSidebar} className={`flex items-center justify-center w-11 h-11 border border-[#2A2A2E] hover:border-[#3A3A3E] rounded-[10px] text-slate-300 hover:text-white transition-all shrink-0 ${isScrolled ? 'bg-[#0F0F0F]/60 hover:bg-[#161616]/80' : 'bg-[#0F0F0F] hover:bg-[#161616]'}`} aria-label="Menu">
             <svg className="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
@@ -212,10 +188,6 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* =========================================
-            TENGAH DESKTOP: SEARCH BAR (Mulai muncul di ukuran tablet/md)
-            ========================================= */}
-        {/* Gap dikurangi dari gap-3 menjadi gap-1.5 */}
         <div className="hidden md:flex flex-1 max-w-[500px] w-full mx-6 gap-2 relative" ref={desktopSearchRef}>
           <div className="relative w-full h-11 group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
@@ -234,11 +206,9 @@ export default function Navbar() {
                 </button>
             )}
 
-            {/* Render Dropdown untuk Desktop */}
             {showDropdown && query.trim().length >= 2 && renderDropdown()}
           </div>
           
-          {/* Tombol Random Anime Desktop */}
           <button 
             onClick={handleRandomAnime}
             disabled={isRandomLoading}
@@ -257,17 +227,12 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* =========================================
-            TENGAH MOBILE: SEARCH BAR (MUNCUL SAAT DIKLIK)
-            ========================================= */}
         {showMobileSearch && (
           <div className="flex md:hidden flex-1 items-center gap-2 sm:gap-3 mr-2 animate-in fade-in duration-200" ref={mobileSearchRef}>
-            {/* Tombol Back mentok ke kiri (menggantikan hamburger) */}
             <button onClick={() => { setShowMobileSearch(false); setQuery(''); setShowDropdown(false); }} className="text-slate-300 hover:text-white p-1.5 -ml-1.5 shrink-0">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
 
-            {/* Kotak Input Presisi Tinggi (Bentuk sama dengan Desktop) */}
             <div className="relative w-full h-11 group">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors">
                 <svg className="w-[18px] h-[18px] text-[#8C8C8C] group-focus-within:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -286,19 +251,13 @@ export default function Navbar() {
                 </button>
               )}
 
-              {/* Render Dropdown untuk Mobile */}
               {showDropdown && query.trim().length >= 2 && renderDropdown()}
             </div>
           </div>
         )}
 
-        {/* =========================================
-            KANAN: ICONS
-            ========================================= */}
-        {/* Gap dikurangi dari gap-2 sm:gap-3 menjadi gap-1.5 sm:gap-2 */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
-          {/* Tombol Kaca Pembesar Mobile (Hilang saat input terbuka) */}
           {!showMobileSearch && (
             <button 
               onClick={() => setShowMobileSearch(true)}
@@ -309,12 +268,10 @@ export default function Navbar() {
             </button>
           )}
 
-          {/* Inbox (TETAP DI TEMPAT) */}
           <button className={`flex items-center justify-center w-11 h-11 border border-[#2A2A2E] hover:border-[#3A3A3E] rounded-[10px] text-slate-300 hover:text-white transition-all shrink-0 ${isScrolled ? 'bg-[#0F0F0F]/60 hover:bg-[#161616]/80' : 'bg-[#0F0F0F] hover:bg-[#161616]'}`} aria-label="Inbox">
             <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
           </button>
 
-          {/* Profile (TETAP DI TEMPAT) */}
           <button className={`flex items-center justify-center w-11 h-11 border border-[#2A2A2E] hover:border-[#3A3A3E] rounded-[10px] text-slate-300 hover:text-white transition-all shrink-0 ${isScrolled ? 'bg-[#0F0F0F]/60 hover:bg-[#161616]/80' : 'bg-[#0F0F0F] hover:bg-[#161616]'}`} aria-label="Profile">
             <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </button>

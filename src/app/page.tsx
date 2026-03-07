@@ -10,23 +10,28 @@ import TopUpcoming from '@/components/TopUpcoming';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const response = await fetchApi('/home');
-  const ongoingAnime = response?.data?.ongoing_anime || [];
-  const completeAnime = response?.data?.complete_anime || [];
+  // Mengambil data dari endpoint root API bowotheexplorer
+  const response = await fetchApi('/'); // atau '/home', sesuaikan route apimu
   
-  // Menggabungkan array untuk simulasi tab "Top Airing", "Most Popular", dll
-  const combinedAnimes = [...ongoingAnime, ...completeAnime];
-  
-  // Membalik array ongoing untuk simulasi data Top Upcoming sementara
-  const upcomingSimulation = [...ongoingAnime].reverse(); 
+  // Data dibungkus dalam properti "results"
+  const data = response?.results || {};
+
+  // Memecah data sesuai kebutuhan masing-masing komponen
+  const spotlights = data.spotlights || [];
+  const latestEpisodes = data.latestEpisode || [];
+  const topAiring = data.topAiring || [];
+  const mostPopular = data.mostPopular || [];
+  const mostFavorite = data.mostFavorite || [];
+  const latestCompleted = data.latestCompleted || [];
+  const topUpcoming = data.topUpcoming || [];
+  const genres = data.genres || [];
 
   return (
     <main className="w-full">
       {/* 1. HERO CAROUSEL */}
-      <HeroCarousel animes={ongoingAnime} />
+      <HeroCarousel animes={spotlights} />
 
       {/* 2. GENRE BAR */}
-      {/* MAGISNYA DI SINI: Memberikan jarak sedikit (mt-3 sm:mt-4) agar tidak terlalu menempel dengan Hero */}
       <div className="mt-1 sm:mt-2">
         <GenreBar />
       </div>
@@ -38,22 +43,23 @@ export default async function Home() {
           {/* KOLOM KIRI (Konten Utama) */}
           <div className="flex-1 min-w-0">
             <WelcomeBanner />
-            <LatestEpisodes animes={ongoingAnime} />
+            <LatestEpisodes animes={latestEpisodes} />
             
-            {/* Negative margin (-mt-4 sm:-mt-6) untuk menarik Tabbed Section ke atas agar lebih rapat! */}
             <div className="-mt-2 sm:-mt-4 relative z-10">
-              <TabbedAnimeSection animes={combinedAnimes} />
+              <TabbedAnimeSection 
+                topAiring={topAiring} 
+                mostPopular={mostPopular} 
+                mostFavorite={mostFavorite} 
+              />
             </div>
           </div>
 
           {/* KOLOM KANAN (Sidebar) */}
           <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0">
-            {/* Widget 1: Latest Completed */}
-            <LatestCompleted animes={completeAnime} />
+            <LatestCompleted animes={latestCompleted} />
             
-            {/* Widget 2: Top Upcoming (Dengan jarak mt-8 agar terpisah rapi) */}
             <div className="mt-8">
-              <TopUpcoming animes={upcomingSimulation} />
+              <TopUpcoming animes={topUpcoming} />
             </div>
           </aside>
 

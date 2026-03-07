@@ -26,3 +26,125 @@ export async function fetchApi(endpoint: string) {
     return null;
   }
 }
+
+
+// ====================================================================
+// FUNGSI SMART FALLBACK SINKRONISASI ANILIST (TRAILER & CHARACTERS)
+// ====================================================================
+
+export async function getAnilistTrailer(anilistId: string | number) {
+  if (!anilistId) return [];
+
+  const query = `
+    query ($id: Int) {
+      Media (id: $id) {
+        trailer {
+          id
+          site
+          thumbnail
+        }
+      }
+    }
+  `;
+
+  try {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        query: query,
+        variables: { id: parseInt(anilistId as string) }
+      }),
+      // Cache data selama 24 jam agar tidak membebani server AniList
+      next: { revalidate: 86400 } 
+    });
+
+    const result = await res.json();
+    const trailer = result?.data?.Media?.trailer;
+
+    // Pastikan trailernya ada dan berasal dari YouTube
+    if (trailer && trailer.site === "youtube") {
+      return [{
+        title: "Official Trailer (AniList Sync)",
+        url: `https://www.youtube.com/embed/${trailer.id}?rel=0`,
+        thumbnail: trailer.thumbnail || `https://img.youtube.com/vi/${trailer.id}/hqdefault.jpg`
+      }];
+    }
+  } catch (error) {
+    console.error("Gagal mengambil trailer dari AniList:", error);
+  }
+
+  return [];
+}
+
+
+export async function getAnilistCharacters(anilistId: string | number) {
+  if (!anilistId) return [];
+
+  const query = `
+    query ($id: Int) {
+      Media (id: $id) {
+        characters (sort: [ROLE, RELEVANCE, ID], perPage: 12) {
+          edges {
+            role
+            node {
+              id
+              name { full }
+              image { large }
+            }
+            voiceActors (language: JAPANESE) {
+              id
+              name { full }
+              image { large }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        query: query,
+        variables: { id: parseInt(anilistId as string) }
+      }),
+      next: { revalidate: 86400 }
+    });
+
+    const result = await res.json();
+    const edges = result?.data?.Media?.characters?.edges || [];
+
+    // Mapping agar strukturnya persis seperti API utama (bowotheexplorer)
+    return edges.map((edge: any) => {
+      const char = edge.node;
+      const va = edge.voiceActors && edge.voiceActors.length > 0 ? edge.voiceActors[0] : null;
+
+      return {
+        character: {
+          id: char?.id?.toString() || "",
+          poster: char?.image?.large || "",
+          name: char?.name?.full || "",
+          cast: edge.role || "Supporting"
+        },
+        voiceActors: va ? [{
+          id: va.id?.toString() || "",
+          poster: va.image?.large || "",
+          name: va.name?.full || ""
+        }] : []
+      };
+    });
+  } catch (error) {
+    console.error("Gagal mengambil karakter dari AniList:", error);
+  }
+
+  return [];
+}

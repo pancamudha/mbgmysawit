@@ -3,7 +3,7 @@
 import React from 'react';
 
 export default function AnimeTrailer({ trailer }: { trailer: any }) {
-  const hasTrailer = trailer?.id;
+  const hasTrailer = !!trailer?.url;
 
   return (
     <div className="w-full h-full flex flex-col gap-4">
@@ -15,31 +15,22 @@ export default function AnimeTrailer({ trailer }: { trailer: any }) {
       <div 
         className={`w-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-2xl relative group ${
             hasTrailer 
-            // PERBAIKAN LOGIKA:
-            // Mobile: 'aspect-video' (16:9 standar)
-            // Desktop (lg): 'lg:aspect-auto lg:h-[568px]' 
-            // -> 568px adalah hasil hitungan: (130px * 4 card) + (16px * 3 gap)
             ? 'aspect-video lg:aspect-auto lg:h-[568px]' 
-            
-            // Jika tidak ada trailer:
             : 'h-full min-h-[130px]'
         }`}
       >
-        
-        {/* Efek Glow */}
         <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 pointer-events-none"></div>
         
         <div className="relative w-full h-full bg-[#0A0A0B] rounded-xl overflow-hidden z-10">
             {hasTrailer ? (
                 <iframe 
                 className="w-full h-full"
-                src={`https://www.youtube.com/embed/${trailer.id}?rel=0`} 
-                title="YouTube video player" 
+                src={trailer.url} 
+                title={trailer.title || "YouTube video player"} 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowFullScreen
                 />
             ) : (
-                // PLACEHOLDER
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0F0F0F] text-[#8C8C8C]">
                     <svg className="w-12 h-12 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />

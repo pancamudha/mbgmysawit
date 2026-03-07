@@ -18,7 +18,7 @@ export default function AnimeDetailPage() {
 
   useEffect(() => {
     const fetchAnimeDetail = async () => {
-      const cacheKey = `animaple_cache_${slug}`;
+      const cacheKey = `animaple_cache_v3_${slug}`;
       const cachedData = sessionStorage.getItem(cacheKey);
 
       if (cachedData) {
@@ -28,13 +28,97 @@ export default function AnimeDetailPage() {
       }
 
       try {
-        const res = await fetch(`https://animaple-core.vercel.app/api/anime/${slug}`);
+        const res = await fetch(`https://bowotheexplorer.vercel.app/api/info?id=${slug}`);
         if (!res.ok) throw new Error("Gagal mengambil data");
         const json = await res.json();
         
-        if (json && json.data) {
-          setAnimeData(json.data);
-          sessionStorage.setItem(cacheKey, JSON.stringify(json.data));
+        if (json && json.results && json.results.data) {
+          const detailData = json.results.data;
+          
+          // SUNTIKKAN DATA SEASONS DARI LUAR OBJEK DATA
+          detailData.seasons = json.results.seasons || [];
+
+          const trailers = detailData.animeInfo?.trailers || [];
+          const characters = detailData.charactersVoiceActors || [];
+          const anilistId = detailData.anilistId;
+
+          // SINKRONISASI SMART FALLBACK (Trailer & Character)
+          if (anilistId && (trailers.length === 0 || characters.length === 0)) {
+            try {
+              const fetchPromises = [];
+              if (trailers.length === 0) {
+                fetchPromises.push(
+                  fetch('https://graphql.anilist.co', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                      query: `query ($id: Int) { Media (id: $id) { trailer { id site thumbnail } } }`,
+                      variables: { id: parseInt(anilistId) }
+                    })
+                  }).then(r => r.json())
+                );
+              } else {
+                fetchPromises.push(Promise.resolve(null));
+              }
+
+              if (characters.length === 0) {
+                fetchPromises.push(
+                  fetch('https://graphql.anilist.co', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                      query: `query ($id: Int) { Media (id: $id) { characters (sort: [ROLE, RELEVANCE, ID], perPage: 12) { edges { role node { id name { full } image { large } } voiceActors (language: JAPANESE) { id name { full } image { large } } } } } }`,
+                      variables: { id: parseInt(anilistId) }
+                    })
+                  }).then(r => r.json())
+                );
+              } else {
+                fetchPromises.push(Promise.resolve(null));
+              }
+
+              const [aniTrailerJson, aniCharJson] = await Promise.all(fetchPromises);
+
+              if (aniTrailerJson) {
+                const trailer = aniTrailerJson?.data?.Media?.trailer;
+                if (trailer && trailer.site === "youtube") {
+                  if (!detailData.animeInfo.trailers) detailData.animeInfo.trailers = [];
+                  detailData.animeInfo.trailers.push({
+                    title: "Official Trailer (AniList Sync)",
+                    url: `https://www.youtube.com/embed/${trailer.id}?rel=0`,
+                    thumbnail: trailer.thumbnail || `https://img.youtube.com/vi/${trailer.id}/hqdefault.jpg`
+                  });
+                }
+              }
+
+              if (aniCharJson) {
+                const edges = aniCharJson?.data?.Media?.characters?.edges || [];
+                if (edges.length > 0) {
+                  detailData.charactersVoiceActors = edges.map((edge: any) => {
+                    const char = edge.node;
+                    const va = edge.voiceActors && edge.voiceActors.length > 0 ? edge.voiceActors[0] : null;
+                    return {
+                      character: {
+                        id: char?.id?.toString() || "",
+                        poster: char?.image?.large || "",
+                        name: char?.name?.full || "",
+                        cast: edge.role || "Supporting"
+                      },
+                      voiceActors: va ? [{
+                        id: va.id?.toString() || "",
+                        poster: va.image?.large || "",
+                        name: va.name?.full || ""
+                      }] : []
+                    };
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Gagal sinkronisasi AniList:", err);
+            }
+          }
+
+          setAnimeData(detailData);
+          sessionStorage.setItem(cacheKey, JSON.stringify(detailData));
         }
       } catch (error) {
         console.error("Error:", error);
@@ -61,45 +145,33 @@ export default function AnimeDetailPage() {
 
   return (
     <div className="relative w-full bg-[#0A0A0B] pb-6">
-      
-      {/* BACKGROUND BANNER */}
       <div className="absolute top-0 left-0 w-full h-[450px] sm:h-[500px] z-0 overflow-hidden pointer-events-none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 
-          src={animeData.banner || animeData.poster} 
+          src={animeData.poster} 
           alt="Background" 
-          className={`w-full h-full object-cover opacity-60 scale-105 ${!animeData.banner ? 'blur-sm' : ''}`} 
+          className="w-full h-full object-cover opacity-60 scale-105 blur-sm" 
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0B]/40 via-[#0A0A0B]/80 to-[#0A0A0B]" />
       </div>
 
-      {/* CONTAINER UTAMA: Gap dikembalikan ke gap-6 sm:gap-8 agar rapat lagi */}
       <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-[30px] flex flex-col gap-6 sm:gap-8">
         
-        {/* SECTION 1: HERO */}
         <AnimeHero anime={animeData} />
         
-        {/* SECTION 2: GRID LAYOUT (Related + Trailer) */}
-        {/* Grid 12 kolom dengan gap-5 agar sidebar & trailer dekat */}
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            
-            {/* KIRI (Sidebar Related): 3 Kolom */}
             <div className="lg:col-span-3 flex flex-col gap-4 order-2 lg:order-1">
-                 <AnimeRelated relations={animeData.relations} />
+                 {/* Lempar relasi dan season sekaligus */}
+                 <AnimeRelated relations={animeData.related_data} seasons={animeData.seasons} />
             </div>
 
-            {/* KANAN (Main Trailer): 9 Kolom */}
             <div className="lg:col-span-9 order-1 lg:order-2">
-                 <AnimeTrailer trailer={animeData.trailer} />
+                 <AnimeTrailer trailer={animeData.animeInfo?.trailers?.[0]} />
             </div>
-
         </div>
         
-        {/* SECTION 3: CHARACTERS */}
-        <AnimeCharacters characters={animeData.characters} />
-        
-        {/* SECTION 4: RECOMMENDATIONS */}
-        <AnimeRecommendations recommendations={animeData.recommendations} />
+        <AnimeCharacters characters={animeData.charactersVoiceActors} />
+        <AnimeRecommendations recommendations={animeData.recommended_data} />
 
       </div>
     </div>
