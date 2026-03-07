@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface AnimeItem {
@@ -32,17 +32,33 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
   
   const [activeTab, setActiveTab] = useState(tabs[0].id);
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Logika Items Per Page Dinamis
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1280) {
+        setItemsPerPage(10);
+      } else {
+        setItemsPerPage(12);
+      }
+    };
+    
+    handleResize(); 
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   let currentAnimes: AnimeItem[] = [];
   if (activeTab === "Top Airing") currentAnimes = topAiring;
   else if (activeTab === "Most Popular") currentAnimes = mostPopular;
   else if (activeTab === "Favourites") currentAnimes = mostFavorite;
 
-  const totalPages = Math.ceil(currentAnimes.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(currentAnimes.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages - 1);
   const currentYear = new Date().getFullYear();
 
-  const handlePrev = () => setCurrentPage((prev) => (prev > 0 ? prev - 1 : prev));
+  const handlePrev = () => setCurrentPage((prev) => (prev > 0 ? prev - 1 : 0));
   const handleNext = () => setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : prev));
   
   const handleTabChange = (tabId: string) => {
@@ -50,7 +66,7 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
     setCurrentPage(0);
   };
 
-  const displayedAnimes = currentAnimes.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const displayedAnimes = currentAnimes.slice(safePage * itemsPerPage, (safePage + 1) * itemsPerPage);
 
   return (
     <div className="w-full mt-10 sm:mt-12">
@@ -74,10 +90,10 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
         </div>
 
         <div className="flex items-center gap-2 shrink-0 pb-1">
-          <button onClick={handlePrev} disabled={currentPage === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
+          <button onClick={handlePrev} disabled={safePage === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button onClick={handleNext} disabled={currentPage >= totalPages - 1 || totalPages === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
+          <button onClick={handleNext} disabled={safePage >= totalPages - 1} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>

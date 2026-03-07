@@ -43,7 +43,6 @@ export default function AnimeDetailPage() {
           const anilistId = detailData.anilistId;
           const malId = detailData.malId;
 
-          // 0. SINKRONISASI BANNER
           if (!detailData.banner && anilistId) {
             try {
               const aniBannerRes = await fetch('https://graphql.anilist.co', {
@@ -63,7 +62,6 @@ export default function AnimeDetailPage() {
             }
           }
 
-          // 1. SINKRONISASI TRAILER
           if (trailers.length === 0) {
             if (anilistId) trailers = await getAnilistTrailer(anilistId);
             if (trailers.length === 0 && malId) trailers = await getMalTrailer(malId);
@@ -73,7 +71,6 @@ export default function AnimeDetailPage() {
             }
           }
 
-          // 2. SINKRONISASI KARAKTER
           if (characters.length === 0) {
             if (anilistId) characters = await getAnilistCharacters(anilistId);
             if (characters.length === 0 && malId) characters = await getMalCharacters(malId);
@@ -106,7 +103,7 @@ export default function AnimeDetailPage() {
     );
   }
 
-  // Cek ketersediaan data untuk layouting dinamis
+  // Cek ketersediaan data untuk layouting pintar (menghilangkan placeholder kosong)
   const hasTrailer = animeData.animeInfo?.trailers?.length > 0;
   const hasRelated = (animeData.related_data?.length > 0) || (animeData.seasons?.length > 0);
   const hasCharacters = animeData.charactersVoiceActors?.length > 0;
@@ -128,35 +125,25 @@ export default function AnimeDetailPage() {
         
         <AnimeHero anime={animeData} />
         
-        {/* SECTION GRID: Trailer & Related dengan Logika Lebar Dinamis */}
+        {/* SECTION GRID PINTAR: Mengatur posisi L-Shape secara otomatis */}
         {(hasTrailer || hasRelated) && (
-          <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-              
-              {/* RELATED ANIME */}
-              {hasRelated && (
-                <div className={`flex flex-col gap-4 order-2 lg:order-1 ${hasTrailer ? 'lg:col-span-3' : 'lg:col-span-12'}`}>
-                    <AnimeRelated 
-                      relations={animeData.related_data} 
-                      seasons={animeData.seasons} 
-                      hasTrailer={hasTrailer} 
-                    />
-                </div>
-              )}
-
-              {/* TRAILER */}
-              {hasTrailer && (
-                <div className={`order-1 lg:order-2 ${hasRelated ? 'lg:col-span-9' : 'lg:col-span-12'}`}>
-                    <AnimeTrailer 
-                      trailer={animeData.animeInfo.trailers[0]} 
-                      hasRelated={hasRelated} 
-                    />
-                </div>
-              )}
-              
+          <div className="w-full">
+            {hasRelated ? (
+               <AnimeRelated 
+                 relations={animeData.related_data} 
+                 seasons={animeData.seasons} 
+                 hasTrailer={hasTrailer} 
+                 trailerNode={
+                   hasTrailer ? <AnimeTrailer trailer={animeData.animeInfo.trailers[0]} hasRelated={hasRelated} /> : null
+                 }
+               />
+            ) : (
+               <AnimeTrailer trailer={animeData.animeInfo.trailers[0]} hasRelated={false} />
+            )}
           </div>
         )}
         
-        {/* Render hanya jika karakter ada (tanpa placeholder) */}
+        {/* Render hanya jika karakter ada */}
         {hasCharacters && (
           <AnimeCharacters characters={animeData.charactersVoiceActors} />
         )}

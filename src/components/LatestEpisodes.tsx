@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface AnimeItem {
@@ -19,14 +19,33 @@ interface AnimeItem {
 
 export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] }) {
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
-  
-  const totalPages = Math.ceil(animes.length / itemsPerPage);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // Default desktop
 
-  const handlePrev = () => setCurrentPage((prev) => (prev > 0 ? prev - 1 : prev));
+  // Logika Items Per Page Dinamis
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1280) {
+        // Desktop (xl): 10 item (5 kolom x 2 baris)
+        setItemsPerPage(10);
+      } else {
+        // Tablet & Mobile: 12 item (4x3 atau 3x4)
+        setItemsPerPage(12);
+      }
+    };
+    
+    handleResize(); // Jalankan saat pertama kali render
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  const totalPages = Math.max(1, Math.ceil(animes.length / itemsPerPage));
+  // Mencegah blank page jika resize menyebabkan currentPage melebihi totalPages
+  const safePage = Math.min(currentPage, totalPages - 1);
+
+  const handlePrev = () => setCurrentPage((prev) => (prev > 0 ? prev - 1 : 0));
   const handleNext = () => setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : prev));
 
-  const displayedAnimes = animes.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const displayedAnimes = animes.slice(safePage * itemsPerPage, (safePage + 1) * itemsPerPage);
   const currentYear = new Date().getFullYear();
 
   return (
@@ -40,10 +59,10 @@ export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] })
         </h2>
         
         <div className="flex items-center gap-2">
-          <button onClick={handlePrev} disabled={currentPage === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
+          <button onClick={handlePrev} disabled={safePage === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button onClick={handleNext} disabled={currentPage >= totalPages - 1 || totalPages === 0} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
+          <button onClick={handleNext} disabled={safePage >= totalPages - 1} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#0A0A0B] hover:bg-[#141414] disabled:opacity-40 disabled:cursor-not-allowed border border-[#2A2A2E] hover:border-[#4A4A4E] flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-sm">
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
