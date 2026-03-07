@@ -128,7 +128,7 @@ export default function Navbar() {
         </div>
       ) : results.length > 0 ? (
         <>
-          {/* === HEADER SUGGESTIONS (DIPERKECIL) === */}
+          {/* === HEADER SUGGESTIONS === */}
           <div className="flex justify-between items-center px-3 py-2 border-b border-[#2A2A2E] shrink-0 bg-[#0A0A0A]/50">
             <span className="text-[10px] font-bold text-[#8C8C8C] tracking-wider uppercase">Suggestions</span>
             <span className="text-[10px] font-medium text-[#8C8C8C]">{results.length} results</span>
@@ -179,12 +179,13 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* === FOOTER PRESS ENTER (IKON DIPERKECIL) === */}
+          {/* === FOOTER PRESS ENTER (DITAMBAH active:text-white) === */}
           <div className="border-t border-[#2A2A2E] py-2.5 px-3 flex justify-center shrink-0 bg-[#0A0A0A]/50">
              <Link 
                href={`/search/${query}`} 
                onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
-               className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white transition-colors"
+               // Di sini nih rahasianya Ofik, tambahin active:text-white
+               className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white active:text-white transition-colors"
              >
                Press Enter for all results
                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
