@@ -88,27 +88,37 @@ export default function Navbar() {
     }
   };
 
-  // FUNGSI RANDOM ANIME MENGGUNAKAN ENDPOINT RESMI API
+  // FUNGSI RANDOM ANIME (Diperbarui menggunakan trik pencarian abjad acak ke bowo api)
   const handleRandomAnime = async () => {
     if (isRandomLoading) return;
     setIsRandomLoading(true);
 
     try {
-      const res = await fetch(`https://bowotheexplorer.vercel.app/api/random`);
+      // Menghasilkan satu huruf acak antara a-z
+      const randomChar = String.fromCharCode(97 + Math.floor(Math.random() * 26)); 
+      
+      const res = await fetch(`https://bowotheexplorer.vercel.app/api/search?keyword=${randomChar}&page=1`);
       if (!res.ok) throw new Error("Gagal mengambil data random");
       
       const json = await res.json();
-      const randomAnime = json?.results?.data; // Tergantung struktur respon endpoint random
+      const list = json?.results?.data || [];
 
-      if (randomAnime && randomAnime.id) {
-        router.push(`/anime/${randomAnime.id}`);
+      if (list.length > 0) {
+        // Pilih 1 index acak dari hasil pencarian
+        const randomIndex = Math.floor(Math.random() * list.length);
+        const randomAnime = list[randomIndex];
+        
+        if (randomAnime && randomAnime.id) {
+          router.push(`/anime/${randomAnime.id}`);
+        }
       } else {
-        console.warn("Gagal mendapatkan anime acak.");
+        console.warn("Tidak menemukan anime acak, coba lagi.");
       }
     } catch (error) {
       console.error("Error random anime:", error);
     } finally {
-      setIsRandomLoading(false);
+      // Delay sedikit agar animasi loading terasa lebih smooth
+      setTimeout(() => setIsRandomLoading(false), 500);
     }
   };
 
@@ -144,9 +154,9 @@ export default function Navbar() {
                 className="group/item relative flex items-center gap-3.5 p-2 rounded-xl overflow-hidden bg-[#141414] border border-transparent hover:border-white/10 active:border-white/10 transition-all duration-300 shrink-0"
               >
                 {/* === BACKGROUND BANNER === */}
-                <div className="absolute inset-0 z-0 overflow-hidden">
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={anime.poster} alt="" className="w-full h-full object-cover scale-105 grayscale opacity-[0.25] group-hover/item:grayscale-0 group-hover/item:translate-x-[6px] group-hover/item:opacity-[0.6] group-active/item:grayscale-0 group-active/item:translate-x-[6px] group-active/item:opacity-[0.6] transition-all duration-500 ease-out" />
+                  <img src={anime.poster} alt="" className="w-full h-full object-cover scale-110 grayscale opacity-[0.15] group-hover/item:grayscale-0 group-hover/item:translate-x-[4px] group-hover/item:opacity-[0.4] group-active/item:grayscale-0 group-active/item:translate-x-[4px] group-active/item:opacity-[0.4] transition-all duration-500 ease-out" />
                   <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/80 to-transparent" />
                 </div>
 
@@ -179,12 +189,11 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* === FOOTER PRESS ENTER (DITAMBAH active:text-white) === */}
+          {/* === FOOTER PRESS ENTER === */}
           <div className="border-t border-[#2A2A2E] py-2.5 px-3 flex justify-center shrink-0 bg-[#0A0A0A]/50">
              <Link 
                href={`/search/${query}`} 
                onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
-               // Di sini nih rahasianya Ofik, tambahin active:text-white
                className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white active:text-white transition-colors"
              >
                Press Enter for all results
