@@ -39,14 +39,12 @@ export default async function ExplorePage({
   const status = typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined;
   const yearParam = typeof resolvedParams.year === 'string' ? resolvedParams.year : undefined;
   
-  // Menangkap parameter query dari pencarian Navbar
   const queryParam = typeof resolvedParams.query === 'string' ? resolvedParams.query : undefined;
   const page = typeof resolvedParams.page === 'string' ? parseInt(resolvedParams.page) : 1;
 
   let animeList: AnimeItem[] = [];
   let totalPages = 200;
 
-  // Jika ada query pencarian, kita fetch dari endpoint search. Jika tidak, gunakan filter explore default.
   if (queryParam) {
     try {
       const res = await fetch(`https://bowotheexplorer.vercel.app/api/search?keyword=${encodeURIComponent(queryParam)}&page=${page}`, { cache: 'no-store' });
@@ -65,16 +63,18 @@ export default async function ExplorePage({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-white px-4 md:px-8 pb-5 md:pb-6 pt-[6px] md:pt-[10px]">
+    <div className="min-h-screen bg-[#0A0A0A] text-white px-4 md:px-8 pb-5 md:pb-6 pt-[6px] md:pt-[10px]">
       <div className="max-w-[1600px] mx-auto">
         
         <ExploreFilterBar />
 
-        {/* Menampilkan indikator teks jika sedang dalam mode pencarian */}
         {queryParam && (
-          <div className="mb-4 text-[13px] md:text-sm text-[#8C8C8C] flex items-center gap-2">
-            <span>Search results for:</span>
-            <span className="text-white font-bold tracking-wide">"{queryParam}"</span>
+          <div className="flex items-center gap-4 mb-6 sm:mb-8 w-full mt-2">
+            <h2 className="text-[12px] sm:text-[14px] font-semibold tracking-[0.1em] text-[#8C8C8C] whitespace-nowrap uppercase">
+              SEARCH RESULT FOR <span className="text-white ml-1">"{queryParam}"</span>
+            </h2>
+            {/* PERUBAHAN DI SINI: Menambahkan efek gradien agar garis memudar ke ujung */}
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-[#2A2A2E] to-transparent"></div>
           </div>
         )}
 
@@ -113,7 +113,7 @@ export default async function ExplorePage({
                       </div>
                     )}
                     
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-80 z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80 z-10" />
                   </div>
                   
                   <div className="flex items-start gap-1.5">
