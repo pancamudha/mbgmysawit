@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LayoutGrid } from "lucide-react";
-import { fetchFilteredAnime } from "@/lib/api";
 import ExploreFilterBar from "@/components/Explore/ExploreFilterBar";
 import ExplorePagination from "@/components/Explore/ExplorePagination";
 
@@ -27,6 +26,25 @@ export const metadata = {
   description: "Cari dan filter anime favorit Anda",
 };
 
+const FORMAT_MAP: Record<string, string> = {
+  "movie": "1", "tv": "2", "ova": "3", "ona": "4", "special": "5", "music": "6"
+};
+
+const GENRE_MAP: Record<string, string> = {
+  "action": "1", "adventure": "2", "cars": "3", "comedy": "4", "dementia": "5", "demons": "6",
+  "mystery": "7", "drama": "8", "ecchi": "9", "fantasy": "10", "game": "11", "historical": "13",
+  "horror": "14", "kids": "15", "magic": "16", "martial-arts": "17", "mecha": "18", "music": "19",
+  "parody": "20", "samurai": "21", "romance": "22", "school": "23", "sci-fi": "24", "shoujo": "25",
+  "shoujo-ai": "26", "shounen": "27", "shounen-ai": "28", "space": "29", "sports": "30",
+  "super-power": "31", "vampire": "32", "harem": "35", "slice-of-life": "36", "supernatural": "37",
+  "military": "38", "police": "39", "psychological": "40", "thriller": "41", "seinen": "42",
+  "josei": "43", "isekai": "44"
+};
+
+const STATUS_MAP: Record<string, string> = {
+  "finished": "1", "currently-airing": "2", "not-yet-aired": "3"
+};
+
 export default async function ExplorePage({
   searchParams,
 }: {
@@ -45,19 +63,49 @@ export default async function ExplorePage({
   let animeList: AnimeItem[] = [];
   let totalPages = 200;
 
-  if (queryParam) {
-    try {
-      const res = await fetch(`https://bowotheexplorer.vercel.app/api/search?keyword=${encodeURIComponent(queryParam)}&page=${page}`, { cache: 'no-store' });
+  const baseUrl = process.env.API_BASE_URL || 'https://bowotheexplorer.vercel.app';
+  const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  const secretKey = process.env.ANIMAPLE_SECRET_KEY || '';
+
+  try {
+    if (queryParam) {
+      const res = await fetch(`${apiUrl}/search?keyword=${encodeURIComponent(queryParam)}&page=${page}`, { 
+        cache: 'no-store',
+        headers: { 'x-animaple-key': secretKey }
+      });
       const json = await res.json();
-      animeList = json?.results?.data || [];
-      totalPages = Number(json?.results?.totalPage) || 1;
-    } catch (error) {
-      console.error("Error fetching search results:", error);
+      animeList = json?.results?.data || json?.data || [];
+      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 1;
+    } else {
+      const queryParams = new URLSearchParams();
+      
+      if (format) queryParams.append("type", FORMAT_MAP[format.toLowerCase()] || format);
+      if (genre) queryParams.append("genres", GENRE_MAP[genre.toLowerCase()] || genre.replace(/-/g, '_'));
+      if (status) queryParams.append("status", STATUS_MAP[status.toLowerCase()] || status.replace(/-/g, '_'));
+      
+      // PERUBAHAN DI SINI: Menyertakan bulan (sm/em) dan hari (sd/ed) agar rentang tahun terbaca full dari 1 Januari s/d 31 Desember
+      if (yearParam) {
+        queryParams.append("sy", yearParam);
+        queryParams.append("sm", "1");
+        queryParams.append("sd", "1");
+        queryParams.append("ey", yearParam); 
+        queryParams.append("em", "12");
+        queryParams.append("ed", "31");
+      }
+      
+      queryParams.append("page", page.toString());
+
+      const res = await fetch(`${apiUrl}/filter?${queryParams.toString()}`, { 
+        cache: 'no-store',
+        headers: { 'x-animaple-key': secretKey }
+      });
+      const json = await res.json();
+      
+      animeList = json?.results?.data || json?.data || [];
+      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 200;
     }
-  } else {
-    const response = await fetchFilteredAnime({ format, genre, status, year: yearParam, page });
-    animeList = response?.results?.data || [];
-    totalPages = Number(response?.results?.totalPage) || 200;
+  } catch (error) {
+    console.error("Error fetching data:", error);
   }
   
   const currentYear = new Date().getFullYear();
@@ -70,11 +118,11 @@ export default async function ExplorePage({
 
         {queryParam && (
           <div className="flex items-center gap-4 mb-6 sm:mb-8 w-full mt-2">
-            <h2 className="text-[12px] sm:text-[14px] font-semibold tracking-[0.1em] text-[#8C8C8C] whitespace-nowrap uppercase">
-              SEARCH RESULT FOR <span className="text-white ml-1">"{queryParam}"</span>
+            <h2 className="text-[18px] sm:text-[24px] whitespace-nowrap">
+              <span className="font-medium text-[#8C8C8C]">Search results for: </span>
+              <span className="font-bold text-white">"{queryParam}"</span>
             </h2>
-            {/* PERUBAHAN DI SINI: Menambahkan efek gradien agar garis memudar ke ujung */}
-            <div className="h-[1px] flex-1 bg-gradient-to-r from-[#2A2A2E] to-transparent"></div>
+            <div className="h-[1px] flex-1 bg-[#2A2A2E]"></div>
           </div>
         )}
 
@@ -84,9 +132,7 @@ export default async function ExplorePage({
               const sub = anime.tvInfo?.sub;
               const eps = anime.tvInfo?.eps;
               
-              const currentEps = sub || eps || '';
               const showType = anime.tvInfo?.showType || 'TV';
-              
               const releaseYear = anime.tvInfo?.releaseDate ? anime.tvInfo.releaseDate.split(', ').pop() : (yearParam || currentYear);
               const epsCount = eps || sub || '';
 
@@ -107,11 +153,7 @@ export default async function ExplorePage({
                       </svg>
                     </div>
                     
-                    {currentEps && (
-                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-md z-30">
-                        EP {currentEps}
-                      </div>
-                    )}
+                    {/* PERUBAHAN DI SINI: Badge EP di pojok kanan atas dihilangkan */}
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80 z-10" />
                   </div>
