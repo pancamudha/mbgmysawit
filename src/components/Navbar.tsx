@@ -8,14 +8,12 @@ export default function Navbar() {
   const router = useRouter(); 
   const [isScrolled, setIsScrolled] = useState(false);
   
-  // === STATE UNTUK LIVE SEARCH ===
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   
-  // === STATE UNTUK RANDOM ANIME ===
   const [isRandomLoading, setIsRandomLoading] = useState(false);
   
   const desktopSearchRef = useRef<HTMLDivElement>(null);
@@ -47,7 +45,6 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Efek Fetch Live Search menggunakan API bowotheexplorer
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (query.trim().length >= 2) {
@@ -78,23 +75,20 @@ export default function Navbar() {
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
-  // Handle tekan Enter untuk pencarian
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim().length > 0) {
       setShowDropdown(false);
       setShowMobileSearch(false);
-      router.push(`/search/${encodeURIComponent(query.trim())}`);
+      router.push(`/explore?query=${encodeURIComponent(query.trim())}`);
       setQuery('');
     }
   };
 
-  // FUNGSI RANDOM ANIME (Diperbarui menggunakan trik pencarian abjad acak ke bowo api)
   const handleRandomAnime = async () => {
     if (isRandomLoading) return;
     setIsRandomLoading(true);
 
     try {
-      // Menghasilkan satu huruf acak antara a-z
       const randomChar = String.fromCharCode(97 + Math.floor(Math.random() * 26)); 
       
       const res = await fetch(`https://bowotheexplorer.vercel.app/api/search?keyword=${randomChar}&page=1`);
@@ -104,7 +98,6 @@ export default function Navbar() {
       const list = json?.results?.data || [];
 
       if (list.length > 0) {
-        // Pilih 1 index acak dari hasil pencarian
         const randomIndex = Math.floor(Math.random() * list.length);
         const randomAnime = list[randomIndex];
         
@@ -117,7 +110,6 @@ export default function Navbar() {
     } catch (error) {
       console.error("Error random anime:", error);
     } finally {
-      // Delay sedikit agar animasi loading terasa lebih smooth
       setTimeout(() => setIsRandomLoading(false), 500);
     }
   };
@@ -138,13 +130,11 @@ export default function Navbar() {
         </div>
       ) : results.length > 0 ? (
         <>
-          {/* === HEADER SUGGESTIONS === */}
           <div className="flex justify-between items-center px-3 py-2 border-b border-[#2A2A2E] shrink-0 bg-[#0A0A0A]/50">
             <span className="text-[10px] font-bold text-[#8C8C8C] tracking-wider uppercase">Suggestions</span>
             <span className="text-[10px] font-medium text-[#8C8C8C]">{results.length} results</span>
           </div>
 
-          {/* === LIST ANIME === */}
           <div className="p-1.5 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] [&::-webkit-scrollbar-thumb]:rounded-full">
             {results.slice(0, 5).map((anime: any, idx: number) => (
               <Link 
@@ -153,20 +143,17 @@ export default function Navbar() {
                 onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
                 className="group/item relative flex items-center gap-3.5 p-2 rounded-xl overflow-hidden bg-[#141414] border border-transparent hover:border-white/10 active:border-white/10 transition-all duration-300 shrink-0"
               >
-                {/* === BACKGROUND BANNER === */}
                 <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={anime.poster} alt="" className="w-full h-full object-cover scale-110 grayscale opacity-[0.15] group-hover/item:grayscale-0 group-hover/item:translate-x-[4px] group-hover/item:opacity-[0.4] group-active/item:grayscale-0 group-active/item:translate-x-[4px] group-active/item:opacity-[0.4] transition-all duration-500 ease-out" />
                   <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/80 to-transparent" />
                 </div>
 
-                {/* === THUMBNAIL POSTER === */}
                 <div className="w-10 sm:w-[46px] aspect-[4/5] rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 relative z-10 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
                    <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover" />
                 </div>
 
-                {/* === TEXT INFO === */}
                 <div className="flex flex-col flex-1 py-0.5 pr-2 z-10 transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
                   <h4 className="text-[13px] sm:text-[14px] font-bold text-slate-200 group-hover/item:text-white/90 group-active/item:text-white/90 line-clamp-2 leading-snug mb-1 drop-shadow-md transition-colors">
                     {anime.title}
@@ -189,18 +176,17 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* === FOOTER PRESS ENTER === */}
           <div className="border-t border-[#2A2A2E] py-2.5 px-3 flex justify-center shrink-0 bg-[#0A0A0A]/50">
              <Link 
-               href={`/search/${query}`} 
-               onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
-               className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white active:text-white transition-colors"
-             >
-               Press Enter for all results
-               <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                 <circle cx="11" cy="11" r="8"></circle>
-                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-               </svg>
+                href={`/explore?query=${encodeURIComponent(query)}`} 
+                onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
+                className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white active:text-white transition-colors"
+              >
+                Press Enter for all results
+                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
              </Link>
           </div>
         </>

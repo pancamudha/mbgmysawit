@@ -51,7 +51,6 @@ export default function ExplorePagination({
   if (totalPages <= 1) return null;
 
   return (
-    // Menambahkan kembali margin-bottom menjadi mb-4 sm:mb-5 agar tidak terlalu mepet
     <div className="flex items-center justify-center mt-10 mb-4 sm:mb-5 w-full">
       {/* Tombol Previous */}
       <button
@@ -65,22 +64,38 @@ export default function ExplorePagination({
 
       {/* Nomor Halaman */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {getPages().map((page, index) => (
-          <button
-            key={index}
-            onClick={() => handlePageChange(page)}
-            disabled={page === "..."}
-            className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] text-[13px] sm:text-sm font-medium transition-all ${
-              page === currentPage
-                ? "bg-[#161616] text-white border border-[#2A2A2E]" 
-                : page === "..."
-                ? "bg-transparent text-[#8C8C8C] cursor-default border border-transparent"
-                : "bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616]"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
+        {getPages().map((page, index) => {
+          
+          // Trik Responsif: Menyembunyikan 1 angka tambahan khusus di Mobile
+          // agar tampilannya persis seperti (1 2 3 4 ... 241)
+          let hideOnMobile = false;
+          if (totalPages > 7) {
+            if (currentPage <= 4 && page === 5) {
+              hideOnMobile = true;
+            } else if (currentPage >= totalPages - 3 && page === totalPages - 4) {
+              hideOnMobile = true;
+            } else if (currentPage > 4 && currentPage < totalPages - 3 && page === currentPage + 1) {
+              hideOnMobile = true;
+            }
+          }
+
+          return (
+            <button
+              key={index}
+              onClick={() => handlePageChange(page)}
+              disabled={page === "..."}
+              className={`${hideOnMobile ? 'hidden sm:flex' : 'flex'} items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] text-[13px] sm:text-sm font-medium transition-all ${
+                page === currentPage
+                  ? "bg-[#161616] text-white border border-[#2A2A2E]" 
+                  : page === "..."
+                  ? "bg-transparent text-[#8C8C8C] cursor-default border border-transparent"
+                  : "bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616]"
+              }`}
+            >
+              {page}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tombol Next */}

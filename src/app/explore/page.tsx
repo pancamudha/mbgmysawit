@@ -38,21 +38,45 @@ export default async function ExplorePage({
   const genre = typeof resolvedParams.genre === 'string' ? resolvedParams.genre : undefined;
   const status = typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined;
   const yearParam = typeof resolvedParams.year === 'string' ? resolvedParams.year : undefined;
+  
+  // Menangkap parameter query dari pencarian Navbar
+  const queryParam = typeof resolvedParams.query === 'string' ? resolvedParams.query : undefined;
   const page = typeof resolvedParams.page === 'string' ? parseInt(resolvedParams.page) : 1;
 
-  const response = await fetchFilteredAnime({ format, genre, status, year: yearParam, page });
+  let animeList: AnimeItem[] = [];
+  let totalPages = 200;
+
+  // Jika ada query pencarian, kita fetch dari endpoint search. Jika tidak, gunakan filter explore default.
+  if (queryParam) {
+    try {
+      const res = await fetch(`https://bowotheexplorer.vercel.app/api/search?keyword=${encodeURIComponent(queryParam)}&page=${page}`, { cache: 'no-store' });
+      const json = await res.json();
+      animeList = json?.results?.data || [];
+      totalPages = Number(json?.results?.totalPage) || 1;
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+    }
+  } else {
+    const response = await fetchFilteredAnime({ format, genre, status, year: yearParam, page });
+    animeList = response?.results?.data || [];
+    totalPages = Number(response?.results?.totalPage) || 200;
+  }
   
-  const animeList: AnimeItem[] = response?.results?.data || [];
-  
-  const totalPages = Number(response?.results?.totalPage) || 200;
   const currentYear = new Date().getFullYear();
 
   return (
-    // Mengubah pt-1 md:pt-2 menjadi pt-[6px] md:pt-[10px] untuk tambahan jarak super halus
     <div className="min-h-screen bg-[#0B0B0C] text-white px-4 md:px-8 pb-5 md:pb-6 pt-[6px] md:pt-[10px]">
       <div className="max-w-[1600px] mx-auto">
         
         <ExploreFilterBar />
+
+        {/* Menampilkan indikator teks jika sedang dalam mode pencarian */}
+        {queryParam && (
+          <div className="mb-4 text-[13px] md:text-sm text-[#8C8C8C] flex items-center gap-2">
+            <span>Search results for:</span>
+            <span className="text-white font-bold tracking-wide">"{queryParam}"</span>
+          </div>
+        )}
 
         {animeList.length > 0 ? (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-5">
