@@ -117,11 +117,10 @@ export default async function ExplorePage({
 
         {queryParam && (
           <div className="flex items-center gap-4 mb-6 sm:mb-8 w-full mt-2">
-            <h2 className="text-[18px] sm:text-[24px] whitespace-nowrap">
-              <span className="font-medium text-[#8C8C8C]">Search results for: </span>
-              <span className="font-bold text-white">"{queryParam}"</span>
+            <h2 className="text-[12px] sm:text-[14px] font-semibold tracking-[0.1em] text-[#8C8C8C] whitespace-nowrap uppercase">
+              SEARCH RESULT FOR <span className="text-white ml-1">"{queryParam}"</span>
             </h2>
-            <div className="h-[1px] flex-1 bg-[#2A2A2E]"></div>
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-[#2A2A2E] to-transparent"></div>
           </div>
         )}
 
