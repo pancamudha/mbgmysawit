@@ -23,7 +23,7 @@ interface AnimeItem {
 
 export const metadata = {
   title: "Explore - Animaple",
-  description: "Cari dan filter anime favorit Anda",
+  description: "Search and filter your favorite anime", // Diterjemahkan
 };
 
 const FORMAT_MAP: Record<string, string> = {
@@ -83,7 +83,6 @@ export default async function ExplorePage({
       if (genre) queryParams.append("genres", GENRE_MAP[genre.toLowerCase()] || genre.replace(/-/g, '_'));
       if (status) queryParams.append("status", STATUS_MAP[status.toLowerCase()] || status.replace(/-/g, '_'));
       
-      // PERUBAHAN DI SINI: Menyertakan bulan (sm/em) dan hari (sd/ed) agar rentang tahun terbaca full dari 1 Januari s/d 31 Desember
       if (yearParam) {
         queryParams.append("sy", yearParam);
         queryParams.append("sm", "1");
@@ -153,8 +152,6 @@ export default async function ExplorePage({
                       </svg>
                     </div>
                     
-                    {/* PERUBAHAN DI SINI: Badge EP di pojok kanan atas dihilangkan */}
-                    
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80 z-10" />
                   </div>
                   
@@ -186,7 +183,7 @@ export default async function ExplorePage({
         ) : (
           <div className="flex flex-col items-center justify-center h-[50vh] text-gray-400">
             <LayoutGrid className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg">Tidak ada anime yang ditemukan.</p>
+            <p className="text-lg">No anime found.</p> {/* Diterjemahkan */}
           </div>
         )}
 
