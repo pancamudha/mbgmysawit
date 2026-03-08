@@ -162,7 +162,7 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
                     )}
                     <span className="text-slate-600 text-[10px] sm:text-[11px]">•</span>
                     <span className={anime.status?.toLowerCase() === 'completed' ? "text-indigo-400" : "text-emerald-400"}>
-                      {anime.status ? anime.status.toUpperCase() : 'ONGOING'}
+                      {anime.status ? anime.status.toUpperCase() : 'RELEASING'}
                     </span>
                     {!!episodeCount && (
                       <>
