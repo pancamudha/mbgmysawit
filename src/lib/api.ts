@@ -2,16 +2,13 @@ const API_BASE_URL = process.env.API_BASE_URL;
 const SECRET_KEY = process.env.ANIMAPLE_SECRET_KEY;
 
 export async function fetchApi(endpoint: string) {
-  // Pastikan endpoint diawali dengan '/'
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   try {
     const response = await fetch(url, {
-      // Kita gunakan opsi 'no-store' saat development agar selalu fresh, 
-      // nanti bisa kita ubah sesuai kebutuhan saat production
-      cache: 'no-store', 
+      cache: 'no-store',
       headers: {
-        'x-animaple-key': SECRET_KEY || '', // Header sakti penembus batas Upstash!
+        'x-animaple-key': SECRET_KEY || '',
       },
     });
 
@@ -26,11 +23,6 @@ export async function fetchApi(endpoint: string) {
     return null;
   }
 }
-
-
-// ====================================================================
-// FUNGSI SMART FALLBACK SINKRONISASI ANILIST (TRAILER & CHARACTERS)
-// ====================================================================
 
 export async function getAnilistTrailer(anilistId: string | number) {
   if (!anilistId) return [];
@@ -58,14 +50,12 @@ export async function getAnilistTrailer(anilistId: string | number) {
         query: query,
         variables: { id: parseInt(anilistId as string) }
       }),
-      // Cache data selama 24 jam agar tidak membebani server AniList
-      next: { revalidate: 86400 } 
+      next: { revalidate: 86400 }
     });
 
     const result = await res.json();
     const trailer = result?.data?.Media?.trailer;
 
-    // Pastikan trailernya ada dan berasal dari YouTube
     if (trailer && trailer.site === "youtube") {
       return [{
         title: "Official Trailer (AniList Sync)",
@@ -79,7 +69,6 @@ export async function getAnilistTrailer(anilistId: string | number) {
 
   return [];
 }
-
 
 export async function getAnilistCharacters(anilistId: string | number) {
   if (!anilistId) return [];
@@ -123,7 +112,6 @@ export async function getAnilistCharacters(anilistId: string | number) {
     const result = await res.json();
     const edges = result?.data?.Media?.characters?.edges || [];
 
-    // Mapping agar strukturnya persis seperti API utama (bowotheexplorer)
     return edges.map((edge: any) => {
       const char = edge.node;
       const va = edge.voiceActors && edge.voiceActors.length > 0 ? edge.voiceActors[0] : null;
@@ -149,17 +137,12 @@ export async function getAnilistCharacters(anilistId: string | number) {
   return [];
 }
 
-// ====================================================================
-// FUNGSI SMART FALLBACK SINKRONISASI MYANIMELIST (VIA JIKAN API)
-// ====================================================================
-
 export async function getMalTrailer(malId: string | number) {
   if (!malId) return [];
 
   try {
-    // Menggunakan Jikan API (Public MAL API)
-    const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}`, { 
-      next: { revalidate: 86400 } 
+    const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}`, {
+      next: { revalidate: 86400 }
     });
     
     const result = await res.json();
@@ -179,24 +162,21 @@ export async function getMalTrailer(malId: string | number) {
   return [];
 }
 
-
 export async function getMalCharacters(malId: string | number) {
   if (!malId) return [];
 
   try {
-    const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}/characters`, { 
-      next: { revalidate: 86400 } 
+    const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}/characters`, {
+      next: { revalidate: 86400 }
     });
     
     const result = await res.json();
     const data = result?.data || [];
 
-    // Ambil maksimal 12 karakter seperti batas UI kita
     const topCharacters = data.slice(0, 100);
 
     return topCharacters.map((item: any) => {
       const char = item.character;
-      // Cari voice actor Jepang
       const va = item.voice_actors?.find((v: any) => v.language === "Japanese")?.person;
 
       return {
@@ -218,4 +198,45 @@ export async function getMalCharacters(malId: string | number) {
   }
 
   return [];
+}
+
+export interface FilterParams {
+  format?: string;
+  genre?: string;
+  status?: string;
+  year?: string;
+  page?: string | number;
+}
+
+export async function fetchFilteredAnime(params: FilterParams) {
+  const queryParams = new URLSearchParams();
+  
+  if (params.format) {
+    queryParams.append('type', params.format);
+  }
+  
+  if (params.genre) {
+    queryParams.append('genres', params.genre.replace(/-/g, '_'));
+  }
+  
+  if (params.status) {
+    queryParams.append('status', params.status.replace(/-/g, '_'));
+  }
+  
+  if (params.year) {
+    queryParams.append('sy', params.year);
+  }
+  
+  if (params.page) {
+    queryParams.append('page', params.page.toString());
+  }
+
+  const queryString = queryParams.toString();
+  
+  let endpoint = `/filter${queryString ? `?${queryString}` : ''}`;
+  if (!API_BASE_URL?.endsWith('/api')) {
+    endpoint = `/api${endpoint}`;
+  }
+  
+  return await fetchApi(endpoint);
 }
