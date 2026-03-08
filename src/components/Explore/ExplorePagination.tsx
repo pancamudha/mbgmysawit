@@ -56,7 +56,8 @@ export default function ExplorePagination({
       <button
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616] disabled:opacity-50 disabled:cursor-not-allowed transition-all mr-3 sm:mr-5 shrink-0"
+        // Mengubah mr-3 menjadi mr-4 (di mobile) dan mr-5 menjadi mr-6 (di PC)
+        className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616] disabled:opacity-50 disabled:cursor-not-allowed transition-all mr-4 sm:mr-6 shrink-0"
         aria-label="Previous Page"
       >
         <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -66,8 +67,6 @@ export default function ExplorePagination({
       <div className="flex items-center gap-1.5 sm:gap-2">
         {getPages().map((page, index) => {
           
-          // Trik Responsif: Menyembunyikan 1 angka tambahan khusus di Mobile
-          // agar tampilannya persis seperti (1 2 3 4 ... 241)
           let hideOnMobile = false;
           if (totalPages > 7) {
             if (currentPage <= 4 && page === 5) {
@@ -102,7 +101,8 @@ export default function ExplorePagination({
       <button
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616] disabled:opacity-50 disabled:cursor-not-allowed transition-all ml-3 sm:ml-5 shrink-0"
+        // Mengubah ml-3 menjadi ml-4 (di mobile) dan ml-5 menjadi ml-6 (di PC)
+        className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616] disabled:opacity-50 disabled:cursor-not-allowed transition-all ml-4 sm:ml-6 shrink-0"
         aria-label="Next Page"
       >
         <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
