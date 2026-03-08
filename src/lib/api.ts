@@ -1,32 +1,32 @@
-// Mengamankan Base URL dari slash berlebih
-const API_BASE_URL = (process.env.API_BASE_URL || "https://bowotheexplorer.vercel.app").replace(/\/$/, "");
+const API_BASE_URL = process.env.API_BASE_URL;
+const SECRET_KEY = process.env.ANIMAPLE_SECRET_KEY;
 
 export async function fetchApi(endpoint: string) {
-  // Mencegah error double slash (//) atau double (/api/api/)
-  let path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  if (API_BASE_URL.endsWith('/api') && path.startsWith('/api')) {
-    path = path.replace('/api', ''); // Hapus /api di path jika Base URL sudah memilikinya
-  }
-  
-  const url = `${API_BASE_URL}${path}`;
+  // Pastikan endpoint diawali dengan '/'
+  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   try {
     const response = await fetch(url, {
+      // Kita gunakan opsi 'no-store' saat development agar selalu fresh, 
+      // nanti bisa kita ubah sesuai kebutuhan saat production
       cache: 'no-store', 
+      headers: {
+        'x-animaple-key': SECRET_KEY || '', // Header sakti penembus batas Upstash!
+      },
     });
 
     if (!response.ok) {
-      console.error(`❌ [API Error 404/500] URL Gagal: ${url}`);
-      return null; // Kita kembalikan null agar website tidak crash merah
+      throw new Error(`Gagal mengambil data dari API: ${response.status}`);
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error(`❌ [Fetch Gagal] URL: ${url}`, error);
+    console.error("Fetch API Error:", error);
     return null;
   }
 }
+
 
 // ====================================================================
 // FUNGSI SMART FALLBACK SINKRONISASI ANILIST (TRAILER & CHARACTERS)
@@ -218,24 +218,4 @@ export async function getMalCharacters(malId: string | number) {
   }
 
   return [];
-}
-
-// ====================================================================
-// FUNGSI ENDPOINT ANIMAPLE (STREAMING & EPISODE WATCH)
-// ====================================================================
-
-export async function getAnimeInfo(animeId: string) {
-  return fetchApi(`/api/info?id=${animeId}`);
-}
-
-export async function getAnimeEpisodes(animeId: string) {
-  return fetchApi(`/api/episodes/${animeId}`);
-}
-
-export async function getEpisodeServers(animeId: string, epId: string) {
-  return fetchApi(`/api/servers/${animeId}?ep=${epId}`);
-}
-
-export async function getStreamingLinks(fullIdWithEp: string, server: string = "hd-1", type: string = "sub") {
-  return fetchApi(`/api/stream?id=${encodeURIComponent(fullIdWithEp)}&server=${server}&type=${type}`);
 }
