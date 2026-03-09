@@ -200,7 +200,8 @@ export default function AnimeSchedule() {
       <div className="-mt-4 sm:mt-3 pb-10">
         {isLoading ? (
           <div className="relative">
-            <div className="absolute w-[1px] bg-[#222222] left-[4.5px] top-[7px] sm:top-[8px] bottom-0 z-0"></div>
+            {/* PERUBAHAN: Ketebalan garis diubah ke w-[2px] dan posisi left-[4px] agar titik tetap di tengah */}
+            <div className="absolute w-[2px] bg-[#222222] left-[4px] top-[7px] sm:top-[8px] bottom-0 z-0"></div>
             
             <div className="flex flex-col gap-6 sm:gap-8">
               {[1, 2, 3].map((i) => (
@@ -218,7 +219,8 @@ export default function AnimeSchedule() {
           </div>
         ) : scheduleData.length > 0 ? (
           <div className="relative">
-            <div className="absolute w-[1px] bg-[#222222] left-[4.5px] top-[8px] sm:top-[9px] bottom-0 z-0"></div>
+            {/* PERUBAHAN: Ketebalan garis diubah ke w-[2px] dan posisi left-[4px] agar titik tetap di tengah */}
+            <div className="absolute w-[2px] bg-[#222222] left-[4px] top-[8px] sm:top-[9px] bottom-0 z-0"></div>
             
             <div className="flex flex-col gap-5 sm:gap-6">
               {sortedTimes.map((time, idx) => {
