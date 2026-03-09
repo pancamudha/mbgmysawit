@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { ChevronRight, CalendarClock, Play } from "lucide-react";
 import { getScheduleAction } from "@/lib/actions";
@@ -95,6 +95,9 @@ export default function SchedulePage() {
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   
+  // CACHE: Untuk menyimpan data yang sudah di-fetch agar tidak perlu loading lama
+  const cacheRef = useRef<Record<string, ScheduleItem[]>>({});
+  
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -125,7 +128,7 @@ export default function SchedulePage() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // FETCH KHUSUS UNTUK HIGHLIGHT (Berjalan sekali saat awal agar "Recently Aired" terkunci di Hari Ini)
+  // FETCH KHUSUS UNTUK HIGHLIGHT
   useEffect(() => {
     const fetchToday = async () => {
       try {
@@ -143,30 +146,59 @@ export default function SchedulePage() {
     fetchToday();
   }, []);
 
-  // FETCH UTAMA UNTUK TIMELINE (Berjalan setiap pengguna memilih tanggal di DaySelector)
+  // FETCH UTAMA UNTUK TIMELINE (DENGAN CACHE & EFEK FADE HALUS)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchSchedule = async () => {
+      const dateStr = formatDateForApi(selectedDate);
+      
+      // Selalu trigger efek meredup (fade out)
       setIsFetching(true);
+      
+      // Beri sedikit jeda agar animasi fade-out CSS sempat tereksekusi sebelum data diganti
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      if (!isMounted) return;
+
+      // Jika data hari tersebut sudah ada di cache
+      if (cacheRef.current[dateStr]) {
+        setScheduleData(cacheRef.current[dateStr]);
+        setIsFetching(false); // Trigger efek memudar kembali (fade in)
+        if (isInitialLoad) setIsInitialLoad(false);
+        return;
+      }
+
+      // Jika belum ada di cache, lakukan fetching ke API
       try {
-        const dateStr = formatDateForApi(selectedDate);
         const tzOffset = new Date().getTimezoneOffset();
-        
         const data = await getScheduleAction(dateStr, tzOffset);
         if (!data) throw new Error("Gagal mengambil data");
         
-        setScheduleData(Array.isArray(data) ? data : data?.results || data?.data || []);
+        const resultData = Array.isArray(data) ? data : data?.results || data?.data || [];
+        
+        // Simpan data ke dalam cache
+        cacheRef.current[dateStr] = resultData;
+        
+        if (isMounted) {
+          setScheduleData(resultData);
+        }
       } catch (error) {
         console.error("Error fetching schedule:", error);
-        setScheduleData([]);
+        if (isMounted) setScheduleData([]);
       } finally {
-        setIsFetching(false);
-        if (isInitialLoad) {
-          setIsInitialLoad(false);
+        if (isMounted) {
+          setIsFetching(false);
+          if (isInitialLoad) setIsInitialLoad(false);
         }
       }
     };
 
     fetchSchedule();
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedDate, isInitialLoad]);
 
   const groupedSchedule: GroupedSchedule = scheduleData.reduce((acc, item) => {
@@ -177,7 +209,7 @@ export default function SchedulePage() {
 
   const sortedTimes = Object.keys(groupedSchedule).sort();
 
-  // LOGIKA HIGHLIGHT: Kini mengambil dari "todaySchedule" sehingga tidak terpengaruh klik hari lain
+  // LOGIKA HIGHLIGHT
   const { highlightItems, highlightHeader } = useMemo(() => {
     if (!todaySchedule || todaySchedule.length === 0) {
       return { highlightItems: [], highlightHeader: "" };
@@ -192,11 +224,9 @@ export default function SchedulePage() {
       return { ...item, diff };
     });
 
-    // Cek anime yang sudah tayang
     const airedItems = withTimeDiff.filter(item => item.diff >= 0);
 
     if (airedItems.length > 0) {
-      // Urutkan dari yang paling baru saja tayang
       airedItems.sort((a, b) => a.diff - b.diff);
       return {
         highlightItems: airedItems.slice(0, 3).map(({ diff, ...item }) => item),
@@ -204,7 +234,6 @@ export default function SchedulePage() {
       };
     }
 
-    // Jika belum ada yang tayang sama sekali (pagi hari), ambil anime yang paling dekat akan tayang
     const futureItems = withTimeDiff.filter(item => item.diff < 0);
     futureItems.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff));
     
@@ -229,10 +258,9 @@ export default function SchedulePage() {
       <div className="max-w-[1600px] mx-auto">
         <div className="w-full">
           
-          {/* AREA HIGHLIGHT: Menjadi statis dan selalu menampilkan hari ini tanpa loading/fade */}
+          {/* AREA HIGHLIGHT */}
           {highlightItems.length > 0 && (
             <div className="mb-6 sm:mb-8">
-              {/* TEKS HEADER DI KIRI ATAS */}
               <h2 className="text-[12px] sm:text-[13px] font-bold text-[#8C8C8C] tracking-widest uppercase mb-3 pl-1 sm:pl-2">
                 {highlightHeader}
               </h2>
@@ -250,8 +278,8 @@ export default function SchedulePage() {
             onSelect={setSelectedDate} 
           />
 
-          {/* AREA TIMELINE: Animasi naik dari bawah dipercepat ke duration-200 */}
-          <div className={`transition-all duration-200 ease-out transform -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+          {/* AREA TIMELINE */}
+          <div className={`transition-opacity duration-200 ease-in-out -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             {scheduleData.length > 0 ? (
               <div className="relative">
                 <div className="absolute w-[2px] bg-[#222222] left-[4px] top-[8px] sm:top-[9px] bottom-0 z-0"></div>
