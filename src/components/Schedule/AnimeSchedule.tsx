@@ -135,6 +135,7 @@ export default function AnimeSchedule() {
 
   const sortedTimes = Object.keys(groupedSchedule).sort();
 
+  // PERUBAHAN LOGIC HIGHLIGHT: Menampilkan yang "Baru Aja Aired"
   const highlightItems = useMemo(() => {
     if (!scheduleData || scheduleData.length === 0) return [];
 
@@ -152,12 +153,22 @@ export default function AnimeSchedule() {
     const withTimeDiff = scheduleData.map(item => {
       const [hours, minutes] = item.time.split(':').map(Number);
       const itemTotalMinutes = hours * 60 + minutes;
-      const diff = Math.abs(itemTotalMinutes - currentTotalMinutes);
+      // Diff positif = Waktu tayang sudah lewat (sudah aired)
+      const diff = currentTotalMinutes - itemTotalMinutes;
       return { ...item, diff };
     });
 
-    withTimeDiff.sort((a, b) => a.diff - b.diff);
-    return withTimeDiff.slice(0, 3).map(({ diff, ...item }) => item);
+    // Filter hanya item yang sudah aired (diff >= 0)
+    const airedItems = withTimeDiff.filter(item => item.diff >= 0);
+
+    if (airedItems.length > 0) {
+      // Urutkan dari yang selisih waktunya paling kecil (paling baru saja tayang)
+      airedItems.sort((a, b) => a.diff - b.diff);
+      return airedItems.slice(0, 3).map(({ diff, ...item }) => item);
+    }
+
+    // Fallback: Jika belum ada yang tayang sama sekali hari ini, ambil 3 urutan pertama
+    return scheduleData.slice(0, 3);
   }, [scheduleData, selectedDate, currentTime]);
 
   const getGridClass = (count: number) => {
