@@ -64,8 +64,8 @@ export default function GenreBar({ genres = [] }: GenreBarProps) {
           {displayGenres.map((genreStr) => (
             <Link 
               key={genreStr} 
-              // API sudah kasih slug murni (huruf kecil dan pakai strip)
-              href={`/genres/${genreStr}`}
+              // PERUBAHAN DI SINI: Mengarahkan langsung ke halaman explore dengan parameter genre
+              href={`/explore?genre=${genreStr}`}
               className="bg-[#141414] hover:bg-[#1A1A1A] border border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all shrink-0 shadow-inner"
             >
               {formatGenreName(genreStr)}
