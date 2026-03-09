@@ -80,8 +80,8 @@ export default function DaySelector({ dates, selectedDate, onSelect }: DaySelect
             onClick={() => handleQuickFilter(btn)}
             className={`px-3 sm:px-4 py-1.5 rounded-[8px] text-[12px] sm:text-[13px] font-medium border transition-colors ${
               activeFilter === btn 
-                ? 'bg-[#1A1A1A] text-white border-white/20' 
-                : 'bg-[#111111] text-[#888888] border-[#222222] hover:bg-[#1A1A1A] hover:text-[#CCCCCC]'
+                ? 'bg-[#161616] text-white border-white/20' 
+                : 'bg-[#0f0f0f] text-[#888888] border-[#222222] hover:bg-[#1A1A1A] hover:text-[#CCCCCC]'
             }`}
           >
             {btn}
