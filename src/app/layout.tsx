@@ -10,18 +10,18 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   // Ganti URL ini dengan domain deployment kamu (misal: https://animaple.vercel.app)
-  metadataBase: new URL("https://animaple-beta.vercel.app"), 
+  metadataBase: new URL("https://mbgmysawit.vercel.app"), 
   
   title: {
-    default: "Animaple - Watch Free Anime Online",
+    default: "Animaple - Watch Free Anime Online · Stream Subbed & Dubbed Anime in HD",
     template: "%s | Animaple",
   },
-  description: "Platform streaming anime subtitle Indonesia gratis, update tiap hari, bebas iklan mengganggu.",
+  description: "A premier platform to stream high-quality anime online for free. Enjoy daily updates of your favorite subbed and dubbed episodes with a seamless, ad-free viewing experience.",
   
   // Konfigurasi untuk Facebook, WhatsApp, Discord, dll.
   openGraph: {
-    title: "Animaple - Watch Free Anime Online",
-    description: "Streaming anime subtitle Indonesia gratis, update tiap hari, dan bebas iklan mengganggu.",
+    title: "Animaple - Watch Free Anime Online · Stream Subbed & Dubbed Anime in HD",
+    description: "A premier platform to stream high-quality anime online for free. Enjoy daily updates of your favorite subbed and dubbed episodes with a seamless, ad-free viewing experience.",
     url: "https://animaple-beta.vercel.app",
     siteName: "Animaple",
     images: [
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
   // Konfigurasi untuk Twitter / X
   twitter: {
     card: "summary_large_image",
-    title: "Animaple - Watch Free Anime Online",
-    description: "Streaming anime subtitle Indonesia gratis, dan ter-update tiap hari.",
+    title: "Animaple - Watch Free Anime Online · Stream Subbed & Dubbed Anime in HD",
+    description: "A premier platform to stream high-quality anime online for free. Enjoy daily updates of your favorite subbed and dubbed episodes with a seamless, ad-free viewing experience.",
     // URL Twitter juga harus absolute
     images: ["https://animaple-beta.vercel.app/favicon.png"], 
   },
