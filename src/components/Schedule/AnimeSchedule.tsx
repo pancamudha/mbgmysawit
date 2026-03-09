@@ -46,11 +46,12 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
           {item.title}
         </h4>
         
+        {/* PERUBAHAN EFEK GLASS: Menyamakan dengan HeroCarousel (bg-black/30, text-white, shadow-sm) */}
         <div className="flex items-center gap-2 drop-shadow-md">
-          <span className="px-2.5 py-0.5 rounded-[6px] bg-[#1A1A1A] text-[10px] sm:text-[11px] font-bold text-[#8C8C8C] border border-[#2A2A2A]">
+          <span className="px-2.5 py-0.5 rounded-[6px] bg-black/30 backdrop-blur-md text-[10px] sm:text-[11px] font-bold text-white border border-white/10 shadow-sm">
             EP {item.episode_no}
           </span>
-          <span className="px-2.5 py-0.5 rounded-[6px] bg-[#1A1A1A] text-[10px] sm:text-[11px] font-bold text-[#8C8C8C] border border-[#2A2A2A]">
+          <span className="px-2.5 py-0.5 rounded-[6px] bg-black/30 backdrop-blur-md text-[10px] sm:text-[11px] font-bold text-white border border-white/10 shadow-sm">
             {formattedTime}
           </span>
         </div>
