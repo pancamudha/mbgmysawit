@@ -15,15 +15,14 @@ export default function Sidebar() {
   };
 
   return (
-    // Sidebar disamakan warnanya dengan navbar (bg-[#0A0A0A]/80 + glass effect)
-    <aside className="fixed left-0 top-[60px] bg-[#0A0A0A]/80 backdrop-blur-xl z-40 h-[calc(100vh-60px)] py-6 px-3 flex flex-col items-start gap-2 border-r border-[#2A2A2E] w-[240px] -translate-x-full [.sidebar-expanded_&]:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl">
+    <aside className="fixed left-0 top-[60px] bg-[#0A0A0A] z-40 h-[calc(100vh-60px)] py-6 px-3 flex flex-col items-start gap-2 border-r border-[#2A2A2E] w-[240px] -translate-x-full [.sidebar-expanded_&]:translate-x-0 transition-transform duration-300 ease-in-out">
       
       {/* Home */}
       <Link 
         href="/" 
-        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group shadow-sm ${
+        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group ${
           isActive('/') 
-            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] hover:bg-[#161616]' 
+            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
         title="Home"
@@ -38,9 +37,9 @@ export default function Sidebar() {
       {/* Explore */}
       <Link 
         href="/explore" 
-        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group shadow-sm ${
+        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group ${
           isActive('/explore') 
-            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] hover:bg-[#161616]' 
+            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
         title="Explore"
@@ -55,9 +54,9 @@ export default function Sidebar() {
       {/* Schedule */}
       <Link 
         href="/schedule" 
-        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group shadow-sm ${
+        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group ${
           isActive('/schedule') 
-            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] hover:bg-[#161616]' 
+            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
         title="Schedule"
@@ -74,9 +73,9 @@ export default function Sidebar() {
       {/* History */}
       <Link 
         href="/history" 
-        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group shadow-sm ${
+        className={`flex items-center gap-4 p-3 w-full rounded-xl transition-colors group ${
           isActive('/history') 
-            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] hover:bg-[#161616]' 
+            ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
         title="History"

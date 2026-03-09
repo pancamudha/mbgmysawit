@@ -240,3 +240,55 @@ export async function fetchFilteredAnime(params: FilterParams) {
   
   return await fetchApi(endpoint);
 }
+
+export async function fetchSchedule(date: string, tzOffset: number) {
+  const queryString = `date=${date}&tzOffset=${tzOffset}`;
+  
+  let endpoint = `/schedule?${queryString}`;
+  if (!API_BASE_URL?.endsWith('/api')) {
+    endpoint = `/api${endpoint}`;
+  }
+  
+  return await fetchApi(endpoint);
+}
+
+// Tambahkan variabel cache di luar fungsi biar tersimpan di memori
+const posterCache = new Map<string, string>();
+
+export async function getPosterFromDetail(id: string) {
+  if (!id) return null;
+
+  // Lapis 1: Cek di Memory Cache (Paling cepat)
+  if (posterCache.has(id)) return posterCache.get(id);
+
+  // Lapis 2: Cek di Session Storage (Kalau user habis refresh halaman)
+  if (typeof window !== "undefined") {
+    const cachedPoster = sessionStorage.getItem(`poster_${id}`);
+    if (cachedPoster) {
+      posterCache.set(id, cachedPoster); // Masukin lagi ke memori
+      return cachedPoster;
+    }
+  }
+
+  try {
+    const res = await fetch(`https://bowotheexplorer.vercel.app/api/info?id=${id}`);
+    const data = await res.json();
+    
+    if (data && data.success && data.results && data.results.data) {
+      const posterUrl = data.results.data.poster;
+      
+      // Simpan ke Cache kalau berhasil!
+      posterCache.set(id, posterUrl);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`poster_${id}`, posterUrl);
+      }
+      
+      return posterUrl;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Gagal mengambil detail poster buat Ofik:", error);
+    return null;
+  }
+}
