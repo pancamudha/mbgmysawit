@@ -58,7 +58,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (r
+  return (
     <html lang="id" className="dark" style={{ colorScheme: 'dark' }}>
       <body className={`${inter.className} bg-[#0A0A0B] text-slate-200 antialiased overflow-x-hidden`}>
         <Navbar />
