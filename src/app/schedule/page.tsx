@@ -38,6 +38,8 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
     return () => { isMounted = false; };
   }, [item.id, posterUrl]);
 
+  const formattedTime = item.time;
+
   return (
     <Link 
       href={`/anime/${item.id}`} 
@@ -64,7 +66,7 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
             EP {item.episode_no}
           </span>
           <span className="px-2.5 py-0.5 rounded-[6px] bg-black/30 backdrop-blur-md text-[10px] sm:text-[11px] font-bold text-white border border-white/10 shadow-sm">
-            {item.time}
+            {formattedTime}
           </span>
         </div>
       </div>
@@ -85,7 +87,14 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
 export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [scheduleData, setScheduleData] = useState<ScheduleItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // STATE BARU: Menyimpan jadwal HARI INI secara independen khusus untuk area Highlight
+  const [todaySchedule, setTodaySchedule] = useState<ScheduleItem[]>([]);
+  
+  // STATE LOADING
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+  
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -99,6 +108,7 @@ export default function SchedulePage() {
     const dayOfWeek = baseDate.getDay(); 
     const startOfWeek = new Date(baseDate);
     startOfWeek.setDate(baseDate.getDate() - dayOfWeek);
+    
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
@@ -108,29 +118,56 @@ export default function SchedulePage() {
 
   const dateList = getWeekDates(selectedDate);
 
+  const formatDateForApi = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // FETCH KHUSUS UNTUK HIGHLIGHT (Berjalan sekali saat awal agar "Recently Aired" terkunci di Hari Ini)
+  useEffect(() => {
+    const fetchToday = async () => {
+      try {
+        const now = new Date();
+        const dateStr = formatDateForApi(now);
+        const tzOffset = now.getTimezoneOffset();
+        
+        const data = await getScheduleAction(dateStr, tzOffset);
+        setTodaySchedule(Array.isArray(data) ? data : data?.results || data?.data || []);
+      } catch (error) {
+        console.error("Error fetching today's schedule for highlight:", error);
+      }
+    };
+
+    fetchToday();
+  }, []);
+
+  // FETCH UTAMA UNTUK TIMELINE (Berjalan setiap pengguna memilih tanggal di DaySelector)
   useEffect(() => {
     const fetchSchedule = async () => {
-      setIsLoading(true);
+      setIsFetching(true);
       try {
-        const yyyy = selectedDate.getFullYear();
-        const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
-        const dd = String(selectedDate.getDate()).padStart(2, "0");
-        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const dateStr = formatDateForApi(selectedDate);
         const tzOffset = new Date().getTimezoneOffset();
         
         const data = await getScheduleAction(dateStr, tzOffset);
+        if (!data) throw new Error("Gagal mengambil data");
+        
         setScheduleData(Array.isArray(data) ? data : data?.results || data?.data || []);
       } catch (error) {
         console.error("Error fetching schedule:", error);
         setScheduleData([]);
       } finally {
-        // Beri sedikit delay agar transisi LoadingScreen smooth
-        setTimeout(() => setIsLoading(false), 500);
+        setIsFetching(false);
+        if (isInitialLoad) {
+          setIsInitialLoad(false);
+        }
       }
     };
 
     fetchSchedule();
-  }, [selectedDate]);
+  }, [selectedDate, isInitialLoad]);
 
   const groupedSchedule: GroupedSchedule = scheduleData.reduce((acc, item) => {
     if (!acc[item.time]) acc[item.time] = [];
@@ -140,22 +177,42 @@ export default function SchedulePage() {
 
   const sortedTimes = Object.keys(groupedSchedule).sort();
 
-  const highlightItems = useMemo(() => {
-    if (!scheduleData.length) return [];
-    const isToday = selectedDate.toDateString() === currentTime.toDateString();
-    if (!isToday) return scheduleData.slice(0, 3);
+  // LOGIKA HIGHLIGHT: Kini mengambil dari "todaySchedule" sehingga tidak terpengaruh klik hari lain
+  const { highlightItems, highlightHeader } = useMemo(() => {
+    if (!todaySchedule || todaySchedule.length === 0) {
+      return { highlightItems: [], highlightHeader: "" };
+    }
 
     const currentTotalMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-    const airedItems = scheduleData
-      .map(item => {
-        const [h, m] = item.time.split(':').map(Number);
-        return { ...item, diff: currentTotalMinutes - (h * 60 + m) };
-      })
-      .filter(item => item.diff >= 0)
-      .sort((a, b) => a.diff - b.diff);
 
-    return airedItems.length > 0 ? airedItems.slice(0, 3) : scheduleData.slice(0, 3);
-  }, [scheduleData, selectedDate, currentTime]);
+    const withTimeDiff = todaySchedule.map(item => {
+      const [hours, minutes] = item.time.split(':').map(Number);
+      const itemTotalMinutes = hours * 60 + minutes;
+      const diff = currentTotalMinutes - itemTotalMinutes;
+      return { ...item, diff };
+    });
+
+    // Cek anime yang sudah tayang
+    const airedItems = withTimeDiff.filter(item => item.diff >= 0);
+
+    if (airedItems.length > 0) {
+      // Urutkan dari yang paling baru saja tayang
+      airedItems.sort((a, b) => a.diff - b.diff);
+      return {
+        highlightItems: airedItems.slice(0, 3).map(({ diff, ...item }) => item),
+        highlightHeader: "RECENTLY AIRED"
+      };
+    }
+
+    // Jika belum ada yang tayang sama sekali (pagi hari), ambil anime yang paling dekat akan tayang
+    const futureItems = withTimeDiff.filter(item => item.diff < 0);
+    futureItems.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff));
+    
+    return {
+      highlightItems: futureItems.slice(0, 3).map(({ diff, ...item }) => item),
+      highlightHeader: "IMMEDIATELY AIRING"
+    };
+  }, [todaySchedule, currentTime]);
 
   const getGridClass = (count: number) => {
     if (count === 3) return "grid-cols-1 lg:grid-cols-3"; 
@@ -163,44 +220,66 @@ export default function SchedulePage() {
     return "grid-cols-1 lg:grid-cols-2"; 
   };
 
-  // Jika Loading, tampilkan LoadingScreen menutupi seluruh konten
-  if (isLoading) return <LoadingScreen />;
+  if (isInitialLoad) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white px-4 md:px-8 pb-2 pt-[8px] md:pt-[12px] font-sans">
       <div className="max-w-[1600px] mx-auto">
         <div className="w-full">
           
-          {/* --- HIGHLIGHT SECTION --- */}
+          {/* AREA HIGHLIGHT: Menjadi statis dan selalu menampilkan hari ini tanpa loading/fade */}
           {highlightItems.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6 sm:mb-8">
-              {highlightItems.map((item, idx) => (
-                <HighlightCard key={`highlight-${idx}`} item={item} />
-              ))}
+            <div className="mb-6 sm:mb-8">
+              {/* TEKS HEADER DI KIRI ATAS */}
+              <h2 className="text-[12px] sm:text-[13px] font-bold text-[#8C8C8C] tracking-widest uppercase mb-3 pl-1 sm:pl-2">
+                {highlightHeader}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {highlightItems.map((item) => (
+                  <HighlightCard key={`highlight-${item.id}`} item={item} />
+                ))}
+              </div>
             </div>
           )}
 
-          {/* --- DAY SELECTOR --- */}
-          <DaySelector dates={dateList} selectedDate={selectedDate} onSelect={setSelectedDate} />
+          <DaySelector 
+            dates={dateList} 
+            selectedDate={selectedDate} 
+            onSelect={setSelectedDate} 
+          />
 
-          {/* --- TIMELINE SECTION --- */}
-          <div className="-mt-4 sm:mt-3 pb-10">
+          {/* AREA TIMELINE: Animasi naik dari bawah tetap ada saat berpindah hari */}
+          <div className={`transition-all duration-500 ease-out transform -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
             {scheduleData.length > 0 ? (
               <div className="relative">
                 <div className="absolute w-[2px] bg-[#222222] left-[4px] top-[8px] sm:top-[9px] bottom-0 z-0"></div>
+                
                 <div className="flex flex-col gap-5 sm:gap-6">
-                  {sortedTimes.map((time, idx) => {
+                  {sortedTimes.map((time) => {
                     const items = groupedSchedule[time];
+                    const gridClass = getGridClass(items.length);
+
                     return (
-                      <div key={idx} className="relative pl-6 sm:pl-7">
+                      <div key={`time-${time}`} className="relative pl-6 sm:pl-7">
                         <div className="absolute w-[10px] h-[10px] bg-[#E5E5E5] rounded-full left-0 top-[8px] sm:top-[9px] z-10"></div>
+
                         <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
                           <ChevronRight className="w-[18px] h-[18px] text-[#777777]" strokeWidth={3} />
-                          <h3 className="text-[17px] sm:text-[19px] font-bold text-[#E5E5E5] tracking-wide">{time}</h3>
+                          <h3 className="text-[17px] sm:text-[19px] font-bold text-[#E5E5E5] tracking-wide">
+                            {time}
+                          </h3>
                         </div>
-                        <div className={`grid ${getGridClass(items.length)} gap-y-2 sm:gap-y-2.5 gap-x-3 sm:gap-x-4`}>
-                          {items.map((item, itemIdx) => (
-                            <AnimeCard key={itemIdx} item={item} selectedDate={selectedDate} currentTime={currentTime} />
+
+                        <div className={`grid ${gridClass} gap-y-2 sm:gap-y-2.5 gap-x-3 sm:gap-x-4`}>
+                          {items.map((item) => (
+                            <AnimeCard 
+                              key={`card-${item.id}`} 
+                              item={item} 
+                              selectedDate={selectedDate} 
+                              currentTime={currentTime} 
+                            />
                           ))}
                         </div>
                       </div>
@@ -215,6 +294,7 @@ export default function SchedulePage() {
               </div>
             )}
           </div>
+
         </div>
       </div>
     </div>
