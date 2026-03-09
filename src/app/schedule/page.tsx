@@ -87,16 +87,15 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
 export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [scheduleData, setScheduleData] = useState<ScheduleItem[]>([]);
-  
-  // STATE BARU: Menyimpan jadwal HARI INI secara independen khusus untuk area Highlight
   const [todaySchedule, setTodaySchedule] = useState<ScheduleItem[]>([]);
   
   // STATE LOADING
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   
-  // CACHE: Untuk menyimpan data yang sudah di-fetch agar tidak perlu loading lama
+  // CACHE & REF
   const cacheRef = useRef<Record<string, ScheduleItem[]>>({});
+  const isFirstMount = useRef(true); // Agar animasi fade tidak jalan mendadak sehabis layar loading hilang
   
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -128,77 +127,98 @@ export default function SchedulePage() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // FETCH KHUSUS UNTUK HIGHLIGHT
-  useEffect(() => {
-    const fetchToday = async () => {
-      try {
-        const now = new Date();
-        const dateStr = formatDateForApi(now);
-        const tzOffset = now.getTimezoneOffset();
-        
-        const data = await getScheduleAction(dateStr, tzOffset);
-        setTodaySchedule(Array.isArray(data) ? data : data?.results || data?.data || []);
-      } catch (error) {
-        console.error("Error fetching today's schedule for highlight:", error);
-      }
-    };
-
-    fetchToday();
-  }, []);
-
-  // FETCH UTAMA UNTUK TIMELINE (DENGAN CACHE & EFEK FADE HALUS)
+  // 1. PRE-FETCH SEMUA HARI DALAM 1 MINGGU SEKALIGUS (Berjalan 1x di awal)
   useEffect(() => {
     let isMounted = true;
 
-    const fetchSchedule = async () => {
+    const prefetchWeek = async () => {
+      try {
+        const now = new Date();
+        const todayStr = formatDateForApi(now);
+        const tzOffset = now.getTimezoneOffset();
+        
+        // Ambil ke-7 tanggal dalam minggu ini
+        const baseDates = getWeekDates(now);
+        const datesToFetch = Array.from(new Set([
+          todayStr, 
+          ...baseDates.map(d => formatDateForApi(d))
+        ]));
+
+        // Fetch semua hari SECARA PARALEL agar super cepat
+        await Promise.all(
+          datesToFetch.map(async (dateStr) => {
+            if (!cacheRef.current[dateStr]) {
+              const data = await getScheduleAction(dateStr, tzOffset);
+              cacheRef.current[dateStr] = Array.isArray(data) ? data : data?.results || data?.data || [];
+            }
+          })
+        );
+
+        if (isMounted) {
+          setTodaySchedule(cacheRef.current[todayStr] || []);
+          // Tampilkan jadwal untuk tanggal yang dipilih (Hari ini)
+          setScheduleData(cacheRef.current[formatDateForApi(now)] || []);
+        }
+      } catch (error) {
+        console.error("Error prefetching week schedule:", error);
+      } finally {
+        if (isMounted) {
+          setIsInitialLoad(false);
+        }
+      }
+    };
+
+    prefetchWeek();
+
+    return () => { isMounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Kosong = hanya jalan saat halaman pertama kali dibuka
+
+  // 2. EFEK KLIK GANTI HARI (Menggunakan data Cache + Efek Fade Halus)
+  useEffect(() => {
+    if (isInitialLoad) return;
+    
+    // Melewatkan render animasi saat layar LoadingScreen baru saja mati
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    let isMounted = true;
+    const fetchSingleDay = async () => {
       const dateStr = formatDateForApi(selectedDate);
       
-      // Selalu trigger efek meredup (fade out)
+      // Paksa efek redup (fade-out) berjalan
       setIsFetching(true);
-      
-      // Beri sedikit jeda agar animasi fade-out CSS sempat tereksekusi sebelum data diganti
       await new Promise(resolve => setTimeout(resolve, 150));
-      
       if (!isMounted) return;
 
-      // Jika data hari tersebut sudah ada di cache
+      // Ambil langsung dari CACHE jika ada! (0 detik delay)
       if (cacheRef.current[dateStr]) {
         setScheduleData(cacheRef.current[dateStr]);
-        setIsFetching(false); // Trigger efek memudar kembali (fade in)
-        if (isInitialLoad) setIsInitialLoad(false);
+        setIsFetching(false); // Kembalikan efek terang (fade-in)
         return;
       }
 
-      // Jika belum ada di cache, lakukan fetching ke API
+      // Fallback: Jika pengguna pindah ke minggu depan yang belum dicache
       try {
         const tzOffset = new Date().getTimezoneOffset();
         const data = await getScheduleAction(dateStr, tzOffset);
-        if (!data) throw new Error("Gagal mengambil data");
-        
         const resultData = Array.isArray(data) ? data : data?.results || data?.data || [];
         
-        // Simpan data ke dalam cache
         cacheRef.current[dateStr] = resultData;
-        
-        if (isMounted) {
-          setScheduleData(resultData);
-        }
+        if (isMounted) setScheduleData(resultData);
       } catch (error) {
-        console.error("Error fetching schedule:", error);
+        console.error("Error fetching single day:", error);
         if (isMounted) setScheduleData([]);
       } finally {
-        if (isMounted) {
-          setIsFetching(false);
-          if (isInitialLoad) setIsInitialLoad(false);
-        }
+        if (isMounted) setIsFetching(false);
       }
     };
 
-    fetchSchedule();
+    fetchSingleDay();
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [selectedDate, isInitialLoad]);
 
   const groupedSchedule: GroupedSchedule = scheduleData.reduce((acc, item) => {
@@ -209,7 +229,7 @@ export default function SchedulePage() {
 
   const sortedTimes = Object.keys(groupedSchedule).sort();
 
-  // LOGIKA HIGHLIGHT
+  // LOGIKA HIGHLIGHT (Statik dari hari ini)
   const { highlightItems, highlightHeader } = useMemo(() => {
     if (!todaySchedule || todaySchedule.length === 0) {
       return { highlightItems: [], highlightHeader: "" };
@@ -278,8 +298,8 @@ export default function SchedulePage() {
             onSelect={setSelectedDate} 
           />
 
-          {/* AREA TIMELINE */}
-          <div className={`transition-opacity duration-200 ease-in-out -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {/* AREA TIMELINE: Animasi fade biasa yang dipicu oleh jeda nafas dari cache */}
+          <div className={`transition-opacity duration-300 ease-in-out -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             {scheduleData.length > 0 ? (
               <div className="relative">
                 <div className="absolute w-[2px] bg-[#222222] left-[4px] top-[8px] sm:top-[9px] bottom-0 z-0"></div>
