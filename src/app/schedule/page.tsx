@@ -95,7 +95,7 @@ export default function SchedulePage() {
   
   // CACHE & REF
   const cacheRef = useRef<Record<string, ScheduleItem[]>>({});
-  const isFirstMount = useRef(true); // Agar animasi fade tidak jalan mendadak sehabis layar loading hilang
+  const isFirstRender = useRef(true); 
   
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -127,7 +127,7 @@ export default function SchedulePage() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // 1. PRE-FETCH SEMUA HARI DALAM 1 MINGGU SEKALIGUS (Berjalan 1x di awal)
+  // 1. PRE-FETCH SEMUA HARI DALAM 1 MINGGU SEKALIGUS
   useEffect(() => {
     let isMounted = true;
 
@@ -137,14 +137,12 @@ export default function SchedulePage() {
         const todayStr = formatDateForApi(now);
         const tzOffset = now.getTimezoneOffset();
         
-        // Ambil ke-7 tanggal dalam minggu ini
         const baseDates = getWeekDates(now);
         const datesToFetch = Array.from(new Set([
           todayStr, 
           ...baseDates.map(d => formatDateForApi(d))
         ]));
 
-        // Fetch semua hari SECARA PARALEL agar super cepat
         await Promise.all(
           datesToFetch.map(async (dateStr) => {
             if (!cacheRef.current[dateStr]) {
@@ -156,8 +154,7 @@ export default function SchedulePage() {
 
         if (isMounted) {
           setTodaySchedule(cacheRef.current[todayStr] || []);
-          // Tampilkan jadwal untuk tanggal yang dipilih (Hari ini)
-          setScheduleData(cacheRef.current[formatDateForApi(now)] || []);
+          setScheduleData(cacheRef.current[formatDateForApi(selectedDate)] || []);
         }
       } catch (error) {
         console.error("Error prefetching week schedule:", error);
@@ -172,54 +169,59 @@ export default function SchedulePage() {
 
     return () => { isMounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Kosong = hanya jalan saat halaman pertama kali dibuka
+  }, []);
 
-  // 2. EFEK KLIK GANTI HARI (Menggunakan data Cache + Efek Fade Halus)
+  // 2. FETCH UTAMA UNTUK TIMELINE (DENGAN CACHE & EFEK FADE HALUS)
+  // PERBAIKAN: Hanya dipicu ketika `selectedDate` berubah, tidak lagi terganggu isInitialLoad
   useEffect(() => {
-    if (isInitialLoad) return;
-    
-    // Melewatkan render animasi saat layar LoadingScreen baru saja mati
-    if (isFirstMount.current) {
-      isFirstMount.current = false;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
       return;
     }
 
     let isMounted = true;
-    const fetchSingleDay = async () => {
+
+    const fetchSchedule = async () => {
       const dateStr = formatDateForApi(selectedDate);
       
-      // Paksa efek redup (fade-out) berjalan
       setIsFetching(true);
       await new Promise(resolve => setTimeout(resolve, 150));
+      
       if (!isMounted) return;
 
-      // Ambil langsung dari CACHE jika ada! (0 detik delay)
       if (cacheRef.current[dateStr]) {
         setScheduleData(cacheRef.current[dateStr]);
-        setIsFetching(false); // Kembalikan efek terang (fade-in)
+        setIsFetching(false); 
         return;
       }
 
-      // Fallback: Jika pengguna pindah ke minggu depan yang belum dicache
       try {
         const tzOffset = new Date().getTimezoneOffset();
         const data = await getScheduleAction(dateStr, tzOffset);
-        const resultData = Array.isArray(data) ? data : data?.results || data?.data || [];
+        if (!data) throw new Error("Gagal mengambil data");
         
+        const resultData = Array.isArray(data) ? data : data?.results || data?.data || [];
         cacheRef.current[dateStr] = resultData;
-        if (isMounted) setScheduleData(resultData);
+        
+        if (isMounted) {
+          setScheduleData(resultData);
+        }
       } catch (error) {
-        console.error("Error fetching single day:", error);
+        console.error("Error fetching schedule:", error);
         if (isMounted) setScheduleData([]);
       } finally {
-        if (isMounted) setIsFetching(false);
+        if (isMounted) {
+          setIsFetching(false);
+        }
       }
     };
 
-    fetchSingleDay();
+    fetchSchedule();
 
-    return () => { isMounted = false; };
-  }, [selectedDate, isInitialLoad]);
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate]);
 
   const groupedSchedule: GroupedSchedule = scheduleData.reduce((acc, item) => {
     if (!acc[item.time]) acc[item.time] = [];
@@ -229,7 +231,7 @@ export default function SchedulePage() {
 
   const sortedTimes = Object.keys(groupedSchedule).sort();
 
-  // LOGIKA HIGHLIGHT (Statik dari hari ini)
+  // LOGIKA HIGHLIGHT
   const { highlightItems, highlightHeader } = useMemo(() => {
     if (!todaySchedule || todaySchedule.length === 0) {
       return { highlightItems: [], highlightHeader: "" };
@@ -298,7 +300,7 @@ export default function SchedulePage() {
             onSelect={setSelectedDate} 
           />
 
-          {/* AREA TIMELINE: Animasi fade biasa yang dipicu oleh jeda nafas dari cache */}
+          {/* AREA TIMELINE */}
           <div className={`transition-opacity duration-300 ease-in-out -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             {scheduleData.length > 0 ? (
               <div className="relative">

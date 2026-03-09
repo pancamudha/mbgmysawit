@@ -30,40 +30,58 @@ export default function DaySelector({ dates, selectedDate, onSelect }: DaySelect
 
   const handleQuickFilter = (filter: string) => {
     const today = new Date();
-    let targetDate = new Date(selectedDate);
+    today.setHours(0, 0, 0, 0);
+
+    let targetDate = new Date(today);
 
     switch (filter) {
       case 'Yesterday':
-        targetDate = new Date(today);
         targetDate.setDate(today.getDate() - 1);
         break;
       case 'Today':
-        targetDate = new Date(today);
         break;
       case 'Tomorrow':
-        targetDate = new Date(today);
         targetDate.setDate(today.getDate() + 1);
         break;
       case 'Previous week':
-        targetDate.setDate(targetDate.getDate() - 7);
+        targetDate.setDate(today.getDate() - 7);
         break;
       case 'Next weekend':
-        const dayOfWeek = targetDate.getDay();
+        const dayOfWeek = today.getDay();
         const daysToSaturday = 6 - dayOfWeek;
-        targetDate.setDate(targetDate.getDate() + (daysToSaturday === 0 ? 7 : daysToSaturday));
+        targetDate.setDate(today.getDate() + daysToSaturday);
         break;
     }
+    
     onSelect(targetDate);
   };
 
   const getActiveFilter = () => {
     const today = new Date();
-    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today); 
+    yesterday.setDate(today.getDate() - 1);
+    
+    const tomorrow = new Date(today); 
+    tomorrow.setDate(today.getDate() + 1);
 
+    // PERBAIKAN: Menambahkan kalkulasi untuk Previous week dan Next weekend
+    const previousWeek = new Date(today);
+    previousWeek.setDate(today.getDate() - 7);
+
+    const nextWeekend = new Date(today);
+    const dayOfWeek = today.getDay();
+    const daysToSaturday = 6 - dayOfWeek;
+    nextWeekend.setDate(today.getDate() + daysToSaturday);
+
+    // Cek urutan kecocokan
     if (isSameDay(selectedDate, today)) return 'Today';
     if (isSameDay(selectedDate, yesterday)) return 'Yesterday';
     if (isSameDay(selectedDate, tomorrow)) return 'Tomorrow';
+    if (isSameDay(selectedDate, previousWeek)) return 'Previous week';
+    if (isSameDay(selectedDate, nextWeekend)) return 'Next weekend';
+    
     return null;
   };
 
@@ -72,7 +90,7 @@ export default function DaySelector({ dates, selectedDate, onSelect }: DaySelect
   return (
     <div className="w-full flex flex-col items-center justify-center mb-8">
       
-      {/* Quick Filters (Miruro Style) - Margin bawah diubah jadi mb-6 sm:mb-8 agar simetris dengan atasnya */}
+      {/* Quick Filters (Miruro Style) */}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-6 sm:mb-8">
         {['Yesterday', 'Today', 'Tomorrow', 'Previous week', 'Next weekend'].map((btn) => (
           <button 
