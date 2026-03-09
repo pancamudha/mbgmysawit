@@ -250,8 +250,8 @@ export default function SchedulePage() {
             onSelect={setSelectedDate} 
           />
 
-          {/* AREA TIMELINE: Animasi naik dari bawah tetap ada saat berpindah hari */}
-          <div className={`transition-all duration-500 ease-out transform -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+          {/* AREA TIMELINE: Animasi naik dari bawah dipercepat ke duration-300 */}
+          <div className={`transition-all duration-300 ease-out transform -mt-4 sm:mt-3 pb-10 ${isFetching ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
             {scheduleData.length > 0 ? (
               <div className="relative">
                 <div className="absolute w-[2px] bg-[#222222] left-[4px] top-[8px] sm:top-[9px] bottom-0 z-0"></div>
