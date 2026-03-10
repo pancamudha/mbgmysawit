@@ -16,7 +16,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-[60px] bg-[#0A0A0A] z-40 h-[calc(100vh-60px)] py-6 px-3 flex flex-col items-start gap-2 border-r border-[#2A2A2E] w-[240px] -translate-x-full [.sidebar-expanded_&]:translate-x-0 transition-transform duration-300 ease-in-out">
+    <aside className="fixed left-0 top-[60px] bg-[#0A0A0A]/80 backdrop-blur-xl z-40 h-[calc(100vh-60px)] py-6 px-3 flex flex-col items-start gap-2 border-r border-[#2A2A2E] w-[240px] -translate-x-full [.sidebar-expanded_&]:translate-x-0 transition-transform duration-300 ease-in-out">
       
       {/* Home */}
       <Link 
