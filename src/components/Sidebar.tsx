@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTitleLanguage } from '@/context/TitleLanguageContext';
@@ -7,6 +8,23 @@ import { useTitleLanguage } from '@/context/TitleLanguageContext';
 export default function Sidebar() {
   const pathname = usePathname();
   const { language, setLanguage } = useTitleLanguage();
+
+  // State untuk mengontrol kemunculan tooltip di mobile
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerTooltip = (id: string) => {
+    setActiveTooltip(id);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setActiveTooltip(null);
+    }, 2000);
+  };
+
+  const handleLanguageSelect = (lang: 'english' | 'romaji', tooltipId: string) => {
+    setLanguage(lang);
+    triggerTooltip(tooltipId);
+  };
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -106,7 +124,7 @@ export default function Sidebar() {
           {/* EN Button */}
           <div className="relative group flex-1">
             <button 
-              onClick={() => setLanguage('english')}
+              onClick={() => handleLanguageSelect('english', 'en')}
               className={`w-full py-1.5 text-[11px] font-bold transition-colors duration-200 tracking-widest rounded-l-[7px] ${
                 language === 'english' 
                   ? 'bg-[#2A2A2E] text-white shadow-sm' 
@@ -116,7 +134,7 @@ export default function Sidebar() {
               EN
             </button>
             {/* Custom Tooltip EN */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 shadow-xl whitespace-nowrap">
+            <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg pointer-events-none transition-all duration-200 z-50 shadow-xl whitespace-nowrap ${activeTooltip === 'en' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'}`}>
               English
             </div>
           </div>
@@ -124,7 +142,7 @@ export default function Sidebar() {
           {/* RO Button */}
           <div className="relative group flex-1">
             <button 
-              onClick={() => setLanguage('romaji')}
+              onClick={() => handleLanguageSelect('romaji', 'ro')}
               className={`w-full py-1.5 text-[11px] font-bold transition-colors duration-200 tracking-widest border-x border-[#2A2A2E] ${
                 language === 'romaji' 
                   ? 'bg-[#2A2A2E] text-white shadow-sm' 
@@ -134,7 +152,7 @@ export default function Sidebar() {
               RO
             </button>
             {/* Custom Tooltip RO */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 shadow-xl whitespace-nowrap">
+            <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg pointer-events-none transition-all duration-200 z-50 shadow-xl whitespace-nowrap ${activeTooltip === 'ro' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'}`}>
               Japanese (Romaji)
             </div>
           </div>
@@ -142,13 +160,13 @@ export default function Sidebar() {
           {/* JP Button (DISABLED - COMING SOON) */}
           <div className="relative group flex-1">
             <button 
-              disabled
+              onClick={() => triggerTooltip('jp')}
               className={`w-full py-1.5 text-[11px] font-bold transition-colors duration-200 tracking-widest rounded-r-[7px] opacity-40 cursor-not-allowed text-[#8C8C8C] bg-[#0A0A0A]`}
             >
               JP
             </button>
             {/* Custom Tooltip JP (2 Baris Rata Tengah) */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 shadow-xl whitespace-nowrap flex flex-col items-center justify-center leading-snug">
+            <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg pointer-events-none transition-all duration-200 z-50 shadow-xl whitespace-nowrap flex flex-col items-center justify-center leading-snug ${activeTooltip === 'jp' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'}`}>
               <span>Japanese (Native)</span>
               <span className="text-[10px] text-[#8C8C8C] mt-0.5">Coming Soon</span>
             </div>
