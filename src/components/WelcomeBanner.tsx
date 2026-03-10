@@ -6,6 +6,7 @@ import Link from 'next/link';
 export default function WelcomeBanner() {
   const [isWelcomeMode, setIsWelcomeMode] = useState(true);
   const [subtitleIndex, setSubtitleIndex] = useState(0);
+  const [loopCount, setLoopCount] = useState(0);
 
   const loopingSubtitles = [
     "Share it With your Friends!",
@@ -15,26 +16,46 @@ export default function WelcomeBanner() {
     "Comments are Back!"
   ];
 
-  // Mengatur transisi dari "Welcome" ke "Love the Site?" setelah 10 detik
+  // Mengatur siklus interval & timeout
   useEffect(() => {
-    const welcomeTimer = setTimeout(() => {
-      setIsWelcomeMode(false);
-    }, 10000); // 10 detik
+    let timer: any;
 
-    return () => clearTimeout(welcomeTimer);
-  }, []);
-
-  // Mengatur looping teks setiap 4 detik setelah mode Welcome selesai
-  useEffect(() => {
-    if (!isWelcomeMode) {
-      // PERUBAHAN: Durasi interval diubah menjadi 4000ms (4 detik)
-      const loopTimer = setInterval(() => {
-        setSubtitleIndex((prevIndex) => (prevIndex + 1) % loopingSubtitles.length);
-      }, 4000); 
-
-      return () => clearInterval(loopTimer);
+    if (isWelcomeMode) {
+      // Fase 1: Tampilkan Welcome selama 10 detik, lalu pindah mode
+      timer = setTimeout(() => {
+        setIsWelcomeMode(false);
+        setSubtitleIndex(0);
+        setLoopCount(0);
+      }, 10000);
+    } else {
+      // Fase 2: Ganti subtitle setiap 4 detik
+      timer = setInterval(() => {
+        setSubtitleIndex((prevIndex) => {
+          const nextIndex = prevIndex + 1;
+          
+          // Jika indeks sudah mencapai batas akhir, hitung sebagai 1 putaran (loop)
+          if (nextIndex === loopingSubtitles.length) {
+            setLoopCount((prevCount) => prevCount + 1);
+            return 0; // kembali ke subtitle pertama
+          }
+          return nextIndex;
+        });
+      }, 3000);
     }
+
+    // Bersihkan timer saat komponen di-unmount atau mode berubah
+    return () => {
+      if (isWelcomeMode) clearTimeout(timer);
+      else clearInterval(timer);
+    };
   }, [isWelcomeMode, loopingSubtitles.length]);
+
+  // Memantau putaran: jika sudah 2x putaran penuh, kembali ke mode Welcome
+  useEffect(() => {
+    if (!isWelcomeMode && loopCount >= 3) {
+      setIsWelcomeMode(true);
+    }
+  }, [loopCount, isWelcomeMode]);
 
   const currentTitle = isWelcomeMode ? "Welcome to Animaple!" : "Love the Site?";
   const currentSubtitle = isWelcomeMode ? "Enjoy watching your favorite anime." : loopingSubtitles[subtitleIndex];
@@ -51,7 +72,6 @@ export default function WelcomeBanner() {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        /* PERUBAHAN: Durasi animasi diubah menjadi 0.7s */
         .anim-fade-in {
           animation: fadeInOnly 0.7s ease-out forwards;
         }
@@ -74,18 +94,18 @@ export default function WelcomeBanner() {
             />
           </div>
           <div className="flex flex-col justify-center overflow-hidden py-0.5">
-            {/* Judul dengan animasi Fade biasa (sekarang 0.6s) */}
+            {/* Judul dengan animasi Fade biasa (0.6s) */}
             <h3 key={currentTitle} className="text-white font-bold text-[13px] sm:text-[14px] leading-tight mb-0.5 anim-fade-in">
               {currentTitle}
             </h3>
-            {/* Subtitle dengan animasi Slide Up + Fade (sekarang 0.6s) */}
+            {/* Subtitle dengan animasi Slide Up + Fade (0.6s) */}
             <p key={currentSubtitle} className="text-[#8C8C8C] text-[10px] sm:text-[11px] font-medium leading-tight anim-slide-up-fade">
               {currentSubtitle}
             </p>
           </div>
         </div>
 
-        {/* Kanan: Social Icons - Tidak ada perubahan */}
+        {/* Kanan: Social Icons */}
         <div className="flex items-center gap-4 sm:gap-5 pr-1">
           
           {/* Discord */}
