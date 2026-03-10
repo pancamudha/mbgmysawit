@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 interface AnimeItem {
   id: string;
   title: string;
+  japanese_title?: string;
   poster: string;
   status?: string;
   tvInfo?: {
@@ -20,6 +22,7 @@ interface AnimeItem {
 export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const { getTitle } = useAnimeTitle(); 
 
   useEffect(() => {
     const handleResize = () => {
@@ -84,11 +87,13 @@ export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] })
           const dotBg = isCompleted ? 'bg-blue-500' : 'bg-green-500';
           const dotShadow = isCompleted ? '' : 'shadow-[0_0_8px_rgba(34,197,94,0.8)]';
           const dotPulse = isCompleted ? '' : 'animate-pulse';
+          
+          const displayTitle = getTitle(anime.title, anime.japanese_title);
 
           return (
             <Link href={`/anime/${anime.id}`} key={`${anime.id}-${index}`} className="group cursor-pointer flex flex-col active:scale-[0.98] transition-transform duration-200">
               <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-[#1A1A1C] mb-2.5 group-hover:ring-2 group-active:ring-2 ring-white/10 transition-all duration-300 group-hover:-translate-y-1.5 group-active:-translate-y-1.5">
-                <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover" loading="lazy" />
+                <img src={anime.poster} alt={displayTitle} className="w-full h-full object-cover" loading="lazy" />
                 
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 group-active:bg-black/50 transition-colors duration-300 z-20 flex items-center justify-center">
                   <svg className="w-12 h-12 sm:w-14 sm:h-14 text-white opacity-0 group-hover:opacity-100 group-active:opacity-100 hover:scale-120 transition-all duration-300 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
@@ -108,12 +113,12 @@ export default function LatestEpisodes({ animes = [] }: { animes: AnimeItem[] })
               <div className="flex items-start gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${dotBg} mt-1.5 shrink-0 ${dotShadow} ${dotPulse}`} />
                 <h3 className="text-[13px] sm:text-[14px] font-bold line-clamp-1 group-hover:text-indigo-400 group-active:text-indigo-400 transition-colors text-white leading-snug">
-                  {anime.title}
+                  {displayTitle}
                 </h3>
               </div>
               
-              {/* PERUBAHAN DI SINI: flex-col di mobile, flex-row di desktop */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0.5 sm:gap-2 mt-1 text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wide">
+              {/* PERUBAHAN DI SINI: Otomatis tumpuk vertikal jika sidebar expanded */}
+              <div className="flex flex-col sm:flex-row [.sidebar-expanded_&]:flex-col items-start sm:items-center [.sidebar-expanded_&]:items-start gap-0.5 sm:gap-2 [.sidebar-expanded_&]:gap-0.5 mt-1 text-[11px] font-semibold text-[#8C8C8C] uppercase tracking-wide">
                 <div className="flex items-center gap-2">
                   <span>{showType}</span>
                   <span className="flex items-center gap-1">

@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 export default function AnimeHero({ anime }: { anime: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const { getTitle } = useAnimeTitle(); // Memanggil Hook Bahasa
 
   if (!anime) return null;
 
@@ -41,6 +43,9 @@ export default function AnimeHero({ anime }: { anime: any }) {
   } else if (rawStatus.toLowerCase() === 'finished airing') {
       displayStatus = 'Finished';
   }
+  
+  // Menggunakan fungsi Helper Bahasa untuk judul utama
+  const displayTitle = getTitle(anime.title, anime.japanese_title);
 
   return (
     <div className="w-full flex flex-col md:flex-row items-start gap-6 md:gap-8 lg:gap-10">
@@ -49,7 +54,7 @@ export default function AnimeHero({ anime }: { anime: any }) {
       <div className="w-[160px] sm:w-[220px] md:w-[260px] shrink-0 mx-auto md:mx-0 flex flex-col gap-3 sm:gap-4">
         <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-white/10 group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover" />
+          <img src={anime.poster} alt={displayTitle} className="w-full h-full object-cover" />
           
           {/* Rating Badge */}
           {rating && rating !== '?' && (
@@ -110,11 +115,12 @@ export default function AnimeHero({ anime }: { anime: any }) {
         {/* Judul */}
         <div className="mb-2.5">
           <h1 className="text-3xl sm:text-4xl md:text-[44px] font-black text-white leading-[1.1] mb-1 uppercase tracking-tight">
-            {anime.title}
+            {displayTitle}
           </h1>
+          {/* Sub-judul dibiarkan Romaji (atau sebaliknya) sebagai referensi tambahan */}
           {anime.japanese_title && (
             <h2 className="text-base sm:text-lg font-bold text-[#8C8C8C] tracking-wide">
-              {anime.japanese_title}
+              {anime.japanese_title !== displayTitle ? anime.japanese_title : anime.title}
             </h2>
           )}
         </div>

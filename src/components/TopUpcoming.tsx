@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 interface AnimeItem {
   id: string;
   title: string;
+  japanese_title?: string;
   poster: string;
   tvInfo?: {
     showType?: string;
@@ -16,6 +18,7 @@ interface AnimeItem {
 
 export default function TopUpcoming({ animes = [] }: { animes: AnimeItem[] }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { getTitle } = useAnimeTitle();
   const initialCount = 6;
   
   if (animes.length === 0) return null;
@@ -54,6 +57,8 @@ export default function TopUpcoming({ animes = [] }: { animes: AnimeItem[] }) {
               epsCount = parts[1].replace('eps)', '').trim();
             }
           }
+          
+          const displayTitle = getTitle(anime.title, anime.japanese_title);
 
           return (
             <Link href={`/anime/${anime.id}`} key={`upcoming-${anime.id}-${index}`} className="group relative flex items-center gap-3.5 p-2 rounded-xl overflow-hidden bg-[#141414] border border-white/5 hover:border-white/10 active:border-white/10 transition-all duration-300 shrink-0">
@@ -65,12 +70,12 @@ export default function TopUpcoming({ animes = [] }: { animes: AnimeItem[] }) {
 
               <div className="w-[48px] sm:w-[54px] aspect-[4/5] rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 relative z-10 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:translate-x-1 group-active:translate-x-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover" />
+                <img src={anime.poster} alt={displayTitle} className="w-full h-full object-cover" />
               </div>
               
               <div className="flex flex-col flex-1 py-1 z-10 pr-2 transition-transform duration-500 group-hover:translate-x-1 group-active:translate-x-1">
                 <h3 className="text-white font-bold text-[13px] sm:text-[14px] leading-snug line-clamp-2 mb-1 group-hover:text-white/80 group-active:text-white/80 transition-colors drop-shadow-md">
-                  {anime.title}
+                  {displayTitle}
                 </h3>
                 <div className="flex items-center flex-wrap gap-1.5 text-[9px] sm:text-[10px] font-bold text-[#8C8C8C] tracking-wider uppercase drop-shadow-md">
                   <span>{releaseYear}</span>

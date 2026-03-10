@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTitleLanguage } from '@/context/TitleLanguageContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { language, setLanguage } = useTitleLanguage();
 
-  // Fungsi helper untuk mengecek status aktif
   const isActive = (path: string) => {
     if (path === '/') {
       return pathname === '/';
@@ -25,7 +26,6 @@ export default function Sidebar() {
             ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
-        title="Home"
       >
         <svg className="w-[22px] h-[22px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -42,7 +42,6 @@ export default function Sidebar() {
             ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
-        title="Explore"
       >
         <svg className="w-[22px] h-[22px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
@@ -59,7 +58,6 @@ export default function Sidebar() {
             ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
-        title="Schedule"
       >
         <svg className="w-[22px] h-[22px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -78,7 +76,6 @@ export default function Sidebar() {
             ? 'text-white bg-[#0F0F0F] border border-[#2A2A2E] shadow-sm hover:bg-[#161616]' 
             : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F] border border-transparent'
         }`} 
-        title="History"
       >
         <svg className="w-[22px] h-[22px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -87,6 +84,79 @@ export default function Sidebar() {
         </svg>
         <span className="font-semibold text-[15px] whitespace-nowrap">History</span>
       </Link>
+
+      {/* Spacer to push toggle down */}
+      <div className="flex-1"></div>
+
+      {/* Language Toggle */}
+      <div className="w-full mt-auto mb-2 px-3 flex items-center gap-4">
+        
+        {/* Ikon Bahasa */}
+        <div className="text-[#8C8C8C] shrink-0">
+          <svg className="w-[22px] h-[22px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+        </div>
+        
+        {/* Seamless Toggle Switch (EN | RO | JP) */}
+        <div className="flex-1 flex bg-[#0A0A0A] border border-[#2A2A2E] rounded-[8px]">
+          
+          {/* EN Button */}
+          <div className="relative group flex-1">
+            <button 
+              onClick={() => setLanguage('english')}
+              className={`w-full py-1.5 text-[11px] font-bold transition-colors duration-200 tracking-widest rounded-l-[7px] ${
+                language === 'english' 
+                  ? 'bg-[#2A2A2E] text-white shadow-sm' 
+                  : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F]'
+              }`}
+            >
+              EN
+            </button>
+            {/* Custom Tooltip EN */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 shadow-xl whitespace-nowrap">
+              English
+            </div>
+          </div>
+          
+          {/* RO Button */}
+          <div className="relative group flex-1">
+            <button 
+              onClick={() => setLanguage('romaji')}
+              className={`w-full py-1.5 text-[11px] font-bold transition-colors duration-200 tracking-widest border-x border-[#2A2A2E] ${
+                language === 'romaji' 
+                  ? 'bg-[#2A2A2E] text-white shadow-sm' 
+                  : 'text-[#8C8C8C] hover:text-white hover:bg-[#0F0F0F]'
+              }`}
+            >
+              RO
+            </button>
+            {/* Custom Tooltip RO */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 shadow-xl whitespace-nowrap">
+              Japanese (Romaji)
+            </div>
+          </div>
+          
+          {/* JP Button (DISABLED - COMING SOON) */}
+          <div className="relative group flex-1">
+            <button 
+              disabled
+              className={`w-full py-1.5 text-[11px] font-bold transition-colors duration-200 tracking-widest rounded-r-[7px] opacity-40 cursor-not-allowed text-[#8C8C8C] bg-[#0A0A0A]`}
+            >
+              JP
+            </button>
+            {/* Custom Tooltip JP (2 Baris Rata Tengah) */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] border border-[#333333] text-white text-[11px] font-medium rounded-lg opacity-0 pointer-events-none translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 shadow-xl whitespace-nowrap flex flex-col items-center justify-center leading-snug">
+              <span>Japanese (Native)</span>
+              <span className="text-[10px] text-[#8C8C8C] mt-0.5">Coming Soon</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
 
     </aside>
   );

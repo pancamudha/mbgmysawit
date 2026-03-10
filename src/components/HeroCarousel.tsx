@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 interface AnimeItem {
   id: string;
   title: string;
+  japanese_title?: string; // Ditambahkan untuk mendukung multi-bahasa
   poster: string;
   description?: string; 
   status?: string;
@@ -60,6 +62,7 @@ const getSeasonString = (dateStr?: string) => {
 export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselAnimes = animes.slice(0, 10);
+  const { getTitle } = useAnimeTitle(); // Memanggil hook bahasa
 
   useEffect(() => {
     if (carouselAnimes.length === 0) return;
@@ -85,6 +88,8 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
           const episodeCount = anime.tvInfo?.episodeInfo?.eps || anime.tvInfo?.eps || subCount;
           const quality = anime.tvInfo?.quality || 'HD';
           
+          // Dapatkan judul sesuai bahasa (tetap gunakan title inggris untuk kalkulasi warna agar tidak ganti warna saat ganti bahasa)
+          const displayTitle = getTitle(anime.title, anime.japanese_title);
           const titleGradient = getDynamicGradient(anime.title || "Unknown");
           const seasonText = getSeasonString(anime.tvInfo?.releaseDate);
 
@@ -92,7 +97,7 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
             <div key={anime.id} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
               <div className="absolute inset-0 w-full h-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover object-[center_20%] opacity-90" />
+                <img src={anime.poster} alt={displayTitle} className="w-full h-full object-cover object-[center_20%] opacity-90" />
               </div>
               
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/40 to-transparent h-full" />
@@ -178,7 +183,7 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
                     )}
                   </div>
                   <h1 className={`text-2xl sm:text-3xl md:text-[36px] font-extrabold leading-[1.1] mb-1.5 sm:mb-2 drop-shadow-md line-clamp-2 tracking-tight bg-gradient-to-r ${titleGradient} text-transparent bg-clip-text`}>
-                    {anime.title}
+                    {displayTitle}
                   </h1>
                   <p className="text-[11px] sm:text-xs md:text-[13px] leading-relaxed text-slate-400 line-clamp-3 sm:line-clamp-2 max-w-[550px] mb-3 sm:mb-0">
                     {anime.description || `Saksikan kisah perjalanan seru dan aksi mendebarkan di dunia penuh intrik. Jangan lewatkan kelanjutan cerita karakter favorit Anda dalam episode terbaru ini.`}

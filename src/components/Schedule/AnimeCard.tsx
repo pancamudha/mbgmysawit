@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Play } from "lucide-react";
 import type { ScheduleItem } from "@/app/schedule/page";
 import { getPosterFromDetail } from "@/lib/api"; 
+import { useAnimeTitle } from "@/context/TitleLanguageContext"; // Import Hook
 
 interface AnimeCardProps {
   item: ScheduleItem;
@@ -14,6 +15,7 @@ interface AnimeCardProps {
 
 export default function AnimeCard({ item, selectedDate, currentTime }: AnimeCardProps) {
   const [posterUrl, setPosterUrl] = useState<string | null>(item.poster || null);
+  const { getTitle } = useAnimeTitle(); // Gunakan Hook Bahasa
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +34,7 @@ export default function AnimeCard({ item, selectedDate, currentTime }: AnimeCard
   }, [item.id, posterUrl]);
 
   const formattedTime = item.time;
+  const displayTitle = getTitle(item.title, item.japanese_title);
 
   const getStatus = () => {
     const today = new Date(currentTime);
@@ -71,7 +74,7 @@ export default function AnimeCard({ item, selectedDate, currentTime }: AnimeCard
       {/* --- FOREGROUND POSTER --- */}
       <div className="w-[48px] sm:w-[54px] h-full rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 relative z-10 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:translate-x-1 group-active:translate-x-1">
         {posterUrl ? (
-          <img src={posterUrl} alt={item.title} className="w-full h-full object-cover" />
+          <img src={posterUrl} alt={displayTitle} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center animate-pulse">
             <Play className="w-4 h-4 text-[#555]" />
@@ -82,7 +85,7 @@ export default function AnimeCard({ item, selectedDate, currentTime }: AnimeCard
       {/* --- CENTER TEXT (TITLE & EP) --- */}
       <div className="flex flex-col justify-center h-full flex-1 min-w-0 z-10 transition-transform duration-500 group-hover:translate-x-1 group-active:translate-x-1">
         <h4 className="text-white font-bold text-[13px] sm:text-[14px] leading-snug line-clamp-2 mb-0.5 group-hover:text-white/80 group-active:text-white/80 transition-colors drop-shadow-md">
-          {item.title}
+          {displayTitle}
         </h4>
         <span className="text-[10px] sm:text-[11px] font-bold text-[#8C8C8C] tracking-wider uppercase drop-shadow-md">
           EP {item.episode_no}

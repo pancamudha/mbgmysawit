@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 export default function Navbar() {
   const router = useRouter(); 
+  const { getTitle } = useAnimeTitle(); // Hook Bahasa
   const [isScrolled, setIsScrolled] = useState(false);
   
   const [query, setQuery] = useState('');
@@ -136,58 +138,61 @@ export default function Navbar() {
           </div>
 
           <div className="p-1.5 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] [&::-webkit-scrollbar-thumb]:rounded-full">
-            {results.slice(0, 5).map((anime: any, idx: number) => (
-              <Link 
-                href={`/anime/${anime.id}`} 
-                key={idx} 
-                onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
-                className="group/item relative flex items-center gap-3.5 p-2 rounded-xl overflow-hidden bg-[#141414] border border-transparent hover:border-white/10 active:border-white/10 transition-all duration-300 shrink-0"
-              >
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={anime.poster} alt="" className="w-full h-full object-cover scale-110 grayscale opacity-[0.15] group-hover/item:grayscale-0 group-hover/item:translate-x-[4px] group-hover/item:opacity-[0.4] group-active/item:grayscale-0 group-active/item:translate-x-[4px] group-active/item:opacity-[0.4] transition-all duration-500 ease-out" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/80 to-transparent" />
-                </div>
-
-                <div className="w-10 sm:w-[46px] aspect-[4/5] rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 relative z-10 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
-                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                   <img src={anime.poster} alt={anime.title} className="w-full h-full object-cover" />
-                </div>
-
-                <div className="flex flex-col flex-1 py-0.5 pr-2 z-10 transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
-                  <h4 className="text-[13px] sm:text-[14px] font-bold text-slate-200 group-hover/item:text-white/90 group-active/item:text-white/90 line-clamp-2 leading-snug mb-1 drop-shadow-md transition-colors">
-                    {anime.title}
-                  </h4>
-                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-[#8C8C8C] uppercase tracking-wider drop-shadow-md">
-                    <span className={anime.tvInfo?.showType === 'Completed' ? 'text-indigo-400' : 'text-emerald-400'}>
-                      {anime.tvInfo?.showType || 'TV'}
-                    </span>
-                    {anime.tvInfo?.sub && (
-                      <>
-                        <span className="text-[#4A4A4E]">•</span>
-                        <span className="flex items-center gap-0.5 text-white/80">
-                           {anime.tvInfo.sub} Eps
-                        </span>
-                      </>
-                    )}
+            {results.slice(0, 5).map((anime: any, idx: number) => {
+              const displayTitle = getTitle(anime.title, anime.japanese_title);
+              return (
+                <Link 
+                  href={`/anime/${anime.id}`} 
+                  key={idx} 
+                  onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
+                  className="group/item relative flex items-center gap-3.5 p-2 rounded-xl overflow-hidden bg-[#141414] border border-transparent hover:border-white/10 active:border-white/10 transition-all duration-300 shrink-0"
+                >
+                  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={anime.poster} alt="" className="w-full h-full object-cover scale-110 grayscale opacity-[0.15] group-hover/item:grayscale-0 group-hover/item:translate-x-[4px] group-hover/item:opacity-[0.4] group-active/item:grayscale-0 group-active/item:translate-x-[4px] group-active/item:opacity-[0.4] transition-all duration-500 ease-out" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/80 to-transparent" />
                   </div>
-                </div>
-              </Link>
-            ))}
+
+                  <div className="w-10 sm:w-[46px] aspect-[4/5] rounded-md overflow-hidden bg-[#1A1A1C] shrink-0 relative z-10 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={anime.poster} alt={displayTitle} className="w-full h-full object-cover" />
+                  </div>
+
+                  <div className="flex flex-col flex-1 py-0.5 pr-2 z-10 transition-transform duration-500 group-hover/item:translate-x-1 group-active/item:translate-x-1">
+                    <h4 className="text-[13px] sm:text-[14px] font-bold text-slate-200 group-hover/item:text-white/90 group-active/item:text-white/90 line-clamp-2 leading-snug mb-1 drop-shadow-md transition-colors">
+                      {displayTitle}
+                    </h4>
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-[#8C8C8C] uppercase tracking-wider drop-shadow-md">
+                      <span className={anime.tvInfo?.showType === 'Completed' ? 'text-indigo-400' : 'text-emerald-400'}>
+                        {anime.tvInfo?.showType || 'TV'}
+                      </span>
+                      {anime.tvInfo?.sub && (
+                        <>
+                          <span className="text-[#4A4A4E]">•</span>
+                          <span className="flex items-center gap-0.5 text-white/80">
+                            {anime.tvInfo.sub} Eps
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           <div className="border-t border-[#2A2A2E] py-2.5 px-3 flex justify-center shrink-0 bg-[#0A0A0A]/50">
-             <Link 
-                href={`/explore?query=${encodeURIComponent(query)}`} 
-                onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
-                className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white active:text-white transition-colors"
-              >
-                Press Enter for all results
-                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-             </Link>
+            <Link 
+              href={`/explore?query=${encodeURIComponent(query)}`} 
+              onClick={() => { setShowDropdown(false); setShowMobileSearch(false); setQuery(''); }} 
+              className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold text-[#8C8C8C] hover:text-white active:text-white transition-colors"
+            >
+              Press Enter for all results
+              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </Link>
           </div>
         </>
       ) : (
@@ -252,12 +257,12 @@ export default function Navbar() {
             title="Random Anime"
           >
               {isRandomLoading ? (
-                 <svg className="animate-spin w-[20px] h-[20px] text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin w-[20px] h-[20px] text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                 </svg>
+                  </svg>
               ) : (
-                 <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 32 32"><path d="M 23 3 L 23 7 L 18.40625 7 L 18.125 7.5 L 14.5 13.96875 L 10.59375 7 L 4 7 L 4 9 L 9.40625 9 L 13.34375 16 L 9.40625 23 L 4 23 L 4 25 L 10.59375 25 L 19.59375 9 L 23 9 L 23 13 L 28 8 Z M 16.78125 18 L 15.625 20.0625 L 18.40625 25 L 23 25 L 23 29 L 28 24 L 23 19 L 23 23 L 19.59375 23 Z"></path></svg>
+                  <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 32 32"><path d="M 23 3 L 23 7 L 18.40625 7 L 18.125 7.5 L 14.5 13.96875 L 10.59375 7 L 4 7 L 4 9 L 9.40625 9 L 13.34375 16 L 9.40625 23 L 4 23 L 4 25 L 10.59375 25 L 19.59375 9 L 23 9 L 23 13 L 28 8 Z M 16.78125 18 L 15.625 20.0625 L 18.40625 25 L 23 25 L 23 29 L 28 24 L 23 19 L 23 23 L 19.59375 23 Z"></path></svg>
               )}
           </button>
         </div>

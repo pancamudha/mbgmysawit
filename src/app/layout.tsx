@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import WelcomePopup from "@/components/WelcomePopup";
+import { TitleLanguageProvider } from "@/context/TitleLanguageContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -61,21 +62,22 @@ export default function RootLayout({
   return (
     <html lang="id" className="dark" style={{ colorScheme: 'dark' }}>
       <body className={`${inter.className} bg-[#0A0A0B] text-slate-200 antialiased overflow-x-hidden`}>
-        <Navbar />
-        <Sidebar />
+        <TitleLanguageProvider>
+          <Navbar />
+          <Sidebar />
 
-        <WelcomePopup />
-        
-        <div className="pt-16 pl-0 [.sidebar-expanded_&]:md:pl-[240px] transition-all duration-300 ease-in-out min-h-screen flex flex-col">
+          <WelcomePopup />
           
-          <main className="flex-grow">
-            {children}
-          </main>
+          <div className="pt-16 pl-0 [.sidebar-expanded_&]:md:pl-[240px] transition-all duration-300 ease-in-out min-h-screen flex flex-col">
+            
+            <main className="flex-grow">
+              {children}
+            </main>
 
-          <Footer />
-          
-        </div>
-        
+            <Footer />
+            
+          </div>
+        </TitleLanguageProvider>
       </body>
     </html>
   );

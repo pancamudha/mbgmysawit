@@ -8,6 +8,7 @@ import DaySelector from "@/components/Schedule/DaySelector";
 import AnimeCard from "@/components/Schedule/AnimeCard";
 import { getPosterFromDetail } from "@/lib/api"; 
 import LoadingScreen from "@/components/LoadingScreen";
+import { useAnimeTitle } from "@/context/TitleLanguageContext"; // Import Hook
 
 export interface ScheduleItem {
   id: string;
@@ -27,6 +28,7 @@ export interface GroupedSchedule {
 // Komponen mini untuk Highlight Card
 function HighlightCard({ item }: { item: ScheduleItem }) {
   const [posterUrl, setPosterUrl] = useState<string | null>(item.poster || null);
+  const { getTitle } = useAnimeTitle(); // Gunakan Hook Bahasa
 
   useEffect(() => {
     let isMounted = true;
@@ -39,6 +41,7 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
   }, [item.id, posterUrl]);
 
   const formattedTime = item.time;
+  const displayTitle = getTitle(item.title, item.japanese_title);
 
   return (
     <Link 
@@ -58,7 +61,7 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
 
       <div className="relative z-10 flex flex-col justify-center gap-2 h-full w-[65%] pl-2 sm:pl-3 transition-transform duration-500 group-hover:-translate-x-1 group-active:-translate-x-1">
         <h4 className="text-white font-bold text-[14px] sm:text-[15px] leading-snug line-clamp-2 drop-shadow-md group-hover:text-white/80 group-active:text-white/80 transition-colors">
-          {item.title}
+          {displayTitle}
         </h4>
         
         <div className="flex items-center gap-2 drop-shadow-md">
@@ -73,7 +76,7 @@ function HighlightCard({ item }: { item: ScheduleItem }) {
 
       <div className="relative z-10 w-[55px] sm:w-[65px] h-full rounded-[6px] overflow-hidden bg-[#1A1A1C] shrink-0 border border-white/5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:-translate-x-1 group-active:-translate-x-1">
         {posterUrl ? (
-          <img src={posterUrl} alt={item.title} className="w-full h-full object-cover" />
+          <img src={posterUrl} alt={displayTitle} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center animate-pulse">
             <Play className="w-5 h-5 text-[#555]" />
@@ -172,7 +175,6 @@ export default function SchedulePage() {
   }, []);
 
   // 2. FETCH UTAMA UNTUK TIMELINE (DENGAN CACHE & EFEK FADE HALUS)
-  // PERBAIKAN: Hanya dipicu ketika `selectedDate` berubah, tidak lagi terganggu isInitialLoad
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
