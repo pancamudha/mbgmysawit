@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Artplayer from 'artplayer';
 import Plyr from 'plyr';
 import videojs from 'video.js';
@@ -57,16 +57,12 @@ export default function VideoPlayer({
   useEffect(() => {
     if (activePlayer !== 'artplayer' || !artRef.current || !proxyUrl || loading) return;
 
-    const captionTracks = tracks.filter((t: any) => t.kind === 'captions');
-    const defaultTrack = captionTracks.find((t: any) => t.default) || captionTracks[0];
-
-    // BENAR-BENAR DEFAULT SESUAI PERMINTAAN
     const art = new Artplayer({
       container: artRef.current,
       url: proxyUrl,
       type: 'm3u8',
       theme: '#ffbaba', 
-      title: episodeData?.title || 'Episode',
+      // Baris "title" dihapus di sini agar Vercel (TypeScript) tidak error
       poster: episodeData?.thumbnail || '',
       volume: 1,
       pip: true,
