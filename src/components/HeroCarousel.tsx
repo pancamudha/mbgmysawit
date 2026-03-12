@@ -92,6 +92,9 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
           const displayTitle = getTitle(anime.title, anime.japanese_title);
           const titleGradient = getDynamicGradient(anime.title || "Unknown");
           const seasonText = getSeasonString(anime.tvInfo?.releaseDate);
+          
+          // Logika slug episode pertama (sama dengan AnimeHero)
+          const firstEpisodeSlug = anime.id || '#';
 
           return (
             <div key={anime.id} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
@@ -190,7 +193,7 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
                   </p>
                 </div>
                 <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 shrink-0 w-full sm:w-auto">
-                  <Link href={`/anime/${anime.id}`} className="bg-white hover:bg-slate-200 text-black font-bold py-2.5 sm:py-2.5 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center gap-2 text-[13px] sm:text-sm flex-1 sm:flex-none shadow-lg">
+                  <Link href={`/watch/${firstEpisodeSlug}`} className="bg-white hover:bg-slate-200 text-black font-bold py-2.5 sm:py-2.5 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center gap-2 text-[13px] sm:text-sm flex-1 sm:flex-none shadow-lg">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Watch Now
                   </Link>
                   <Link href={`/anime/${anime.id}`} className="bg-black/30 hover:bg-white/10 border border-white/10 backdrop-blur-md text-white font-medium py-2.5 sm:py-2.5 px-4 sm:px-5 rounded-lg transition-colors flex items-center justify-center gap-2 text-[13px] sm:text-sm flex-1 sm:flex-none shadow-lg">
