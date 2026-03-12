@@ -57,14 +57,12 @@ export default function VideoPlayer({
   useEffect(() => {
     if (activePlayer !== 'artplayer' || !artRef.current || !proxyUrl || loading) return;
 
-    const captionTracks = tracks.filter((t: any) => t.kind === 'captions');
-    const defaultTrack = captionTracks.find((t: any) => t.default) || captionTracks[0];
-
     const art = new Artplayer({
       container: artRef.current,
       url: proxyUrl,
       type: 'm3u8',
       theme: '#ffbaba', 
+      // Baris "title" dihapus di sini agar Vercel (TypeScript) tidak error
       poster: episodeData?.thumbnail || '',
       volume: 1,
       pip: true,
@@ -253,7 +251,6 @@ export default function VideoPlayer({
             {activePlayer === 'iframe' && iframeUrl && (
               <iframe 
                 src={iframeUrl} 
-                referrerPolicy="no-referrer" /* INI KUNCI RAHASIANYA! Mencegah blokir domain di production */
                 className="absolute inset-0 w-full h-full border-none outline-none z-10 bg-black" 
                 allowFullScreen 
                 allow="autoplay; fullscreen" 
