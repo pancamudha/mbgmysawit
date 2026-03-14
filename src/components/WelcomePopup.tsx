@@ -7,6 +7,8 @@ export default function DevelopmentPopup() {
   const [isMounted, setIsMounted] = useState(false);
   // State untuk checkbox "Jangan tampilkan lagi"
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  // State untuk bahasa (default false = English)
+  const [isIndonesian, setIsIndonesian] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -37,10 +39,20 @@ export default function DevelopmentPopup() {
       {/* MAGISNYA DI SINI: Efek Glassmorphism ala Navbar (bg transparan + backdrop blur) */}
       <div className="w-full max-w-[420px] bg-[#0A0A0A]/80 backdrop-blur-xl border border-[#2A2A2E]/80 rounded-2xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative overflow-hidden">
         
+        {/* Tombol Ganti Bahasa */}
+        <button 
+          onClick={() => setIsIndonesian(!isIndonesian)}
+          className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#141414] hover:bg-[#1A1A1C] border border-[#2A2A2E] text-[10px] font-bold text-[#8C8C8C] hover:text-white transition-colors z-20"
+          title={isIndonesian ? 'Switch to English' : 'Translate to Indonesia'}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
+          <span>{isIndonesian ? 'EN' : 'ID'}</span>
+        </button>
+
         {/* Hiasan Background Glow */}
         <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-yellow-500/10 blur-[60px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-        <div className="relative z-10 flex flex-col items-center text-center">
+        <div className="relative z-10 flex flex-col items-center text-center mt-2">
           
           {/* Icon Warning Keren */}
           <div className="w-12 h-12 rounded-full bg-[#141414]/80 border border-[#2A2A2E] flex items-center justify-center mb-5 shadow-inner">
@@ -50,20 +62,29 @@ export default function DevelopmentPopup() {
           </div>
 
           {/* Judul & Deskripsi */}
-          <h2 className="text-xl font-bold text-white mb-3">Status Pengembangan</h2>
+          <h2 className="text-xl font-bold text-white mb-3">
+            {isIndonesian ? 'Status Pengembangan' : 'Development Status'}
+          </h2>
           <div className="space-y-3 text-[13px] sm:text-[14px] text-[#8C8C8C] leading-relaxed mb-6">
             <p>
-              Website <strong>Animaple</strong> saat ini masih dalam tahap <span className="text-yellow-500 font-medium">BETA Development</span>.
+              {isIndonesian ? (
+                <>Website <strong>Animaple</strong> saat ini masih dalam tahap <span className="text-yellow-500 font-medium">BETA Development</span>.</>
+              ) : (
+                <>The <strong>Animaple</strong> website is currently in the <span className="text-yellow-500 font-medium">BETA Development</span> phase.</>
+              )}
             </p>
             <p>
-              Anda mungkin akan menjumpai <i>bug</i>, error, atau fitur yang belum sempurna. Kami sedang bekerja keras melakukan perbaikan dan peningkatan sistem setiap harinya.
+              {isIndonesian 
+                ? 'Anda mungkin akan menjumpai bug, error, atau fitur yang belum sempurna. Kami sedang bekerja keras melakukan perbaikan dan peningkatan sistem setiap harinya.' 
+                : 'You might encounter bugs, errors, or incomplete features. We are working hard to fix and improve the system every day.'
+              }
             </p>
           </div>
 
           {/* Badges Kontribusi */}
           <div className="w-full flex flex-col gap-2 mb-6">
             <p className="text-[11px] font-bold text-[#555] uppercase tracking-wider mb-1">
-              Tertarik Kontribusi / Lapor Bug?
+              {isIndonesian ? 'Tertarik Kontribusi / Lapor Bug?' : 'Interested in Contributing / Reporting Bugs?'}
             </p>
             
             <div className="flex items-center justify-center gap-3">
@@ -102,8 +123,8 @@ export default function DevelopmentPopup() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <span className="text-xs text-[#8C8C8C] group-hover:text-white transition-colors">
-              Jangan tampilkan pesan ini lagi
+            <span className="text-xs text-[#8C8C8C] group-hover:text-white transition-colors select-none">
+              {isIndonesian ? 'Jangan tampilkan pesan ini lagi' : "Don't show this message again"}
             </span>
           </label>
 
@@ -112,7 +133,7 @@ export default function DevelopmentPopup() {
             onClick={handleDismiss}
             className="w-full py-2.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-slate-200 transition-colors active:scale-95 duration-200"
           >
-            Tutup
+            {isIndonesian ? 'Tutup' : 'Close'}
           </button>
           
         </div>
