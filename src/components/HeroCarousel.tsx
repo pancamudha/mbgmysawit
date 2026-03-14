@@ -93,7 +93,7 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
              rawQuality = 'HD';
           }
 
-          Finalisasi variabel
+          // Finalisasi variabel
           const quality = rawQuality || 'HD';
           const episodeCount = anime.tvInfo?.episodeInfo?.eps || anime.tvInfo?.eps || subCount;
           
