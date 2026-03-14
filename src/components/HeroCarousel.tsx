@@ -83,10 +83,19 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
         {carouselAnimes.map((anime, index) => {
           const isActive = index === currentIndex;
           
-          const subCount = anime.tvInfo?.episodeInfo?.sub || anime.tvInfo?.sub;
-          const dubCount = anime.tvInfo?.episodeInfo?.dub || anime.tvInfo?.dub;
+          let rawQuality = anime.tvInfo?.quality;
+          let subCount = anime.tvInfo?.episodeInfo?.sub || anime.tvInfo?.sub;
+          let dubCount = anime.tvInfo?.episodeInfo?.dub || anime.tvInfo?.dub;
+          
+          if (typeof rawQuality === 'object' && rawQuality !== null) {
+             subCount = subCount || (rawQuality as any).sub;
+             dubCount = dubCount || (rawQuality as any).dub;
+             rawQuality = 'HD';
+          }
+
+          // Finalisasi variabel
+          const quality = rawQuality || 'HD';
           const episodeCount = anime.tvInfo?.episodeInfo?.eps || anime.tvInfo?.eps || subCount;
-          const quality = anime.tvInfo?.quality || 'HD';
           
           // Dapatkan judul sesuai bahasa (tetap gunakan title inggris untuk kalkulasi warna agar tidak ganti warna saat ganti bahasa)
           const displayTitle = getTitle(anime.title, anime.japanese_title);
