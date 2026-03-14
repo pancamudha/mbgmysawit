@@ -88,8 +88,8 @@ export default function HeroCarousel({ animes = [] }: { animes: AnimeItem[] }) {
           let dubCount = anime.tvInfo?.episodeInfo?.dub || anime.tvInfo?.dub;
           
           if (typeof rawQuality === 'object' && rawQuality !== null) {
-             subCount = subCount || rawQuality.sub;
-             dubCount = dubCount || rawQuality.dub;
+             subCount = subCount || (rawQuality as any).sub;
+             dubCount = dubCount || (rawQuality as any).dub;
              rawQuality = 'HD';
           }
 
