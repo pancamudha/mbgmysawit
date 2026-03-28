@@ -37,8 +37,9 @@ export default function LatestCompleted({ animes = [] }: { animes: AnimeItem[] }
         </h2>
       </div>
 
+      {/* PERUBAHAN DI SINI: max-h disesuaikan presisi untuk 7 card, pb-2 dihapus agar jarak bawah presisi */}
       <div className={`flex flex-col gap-2.5 transition-all duration-300 ${
-        isExpanded ? 'max-h-[620px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]' : ''
+        isExpanded ? 'max-h-[608px] sm:max-h-[658.5px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] rounded-b-xl' : ''
       }`}>
         {displayedList.map((anime) => {
           const epsNumber = anime.tvInfo?.eps || anime.tvInfo?.sub || '?';
@@ -76,9 +77,13 @@ export default function LatestCompleted({ animes = [] }: { animes: AnimeItem[] }
         })}
       </div>
       
+      {/* PERUBAHAN DI SINI: mt-2.5, w-full pada container. w-full, bg, border, dan padding yang presisi pada button */}
       {animes.length > initialCount && (
-        <div className="mt-2 flex justify-center">
-          <button onClick={() => setIsExpanded(!isExpanded)} className="text-[11px] sm:text-xs font-semibold text-[#8C8C8C] hover:text-white flex items-center gap-1.5 transition-colors py-2 px-4">
+        <div className="mt-2.5 w-full">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)} 
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-4 rounded-xl border border-[#2A2A2E] bg-[#0f0f0f] hover:bg-[#141414] text-[11px] sm:text-xs font-semibold text-[#8C8C8C] hover:text-white transition-all shadow-sm"
+          >
             {isExpanded ? 'Show Less' : 'Show More'}
             <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
