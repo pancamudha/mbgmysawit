@@ -73,16 +73,16 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
   return (
     <div className="w-full mt-10 sm:mt-12">
       <div className="flex items-end justify-between mb-5 gap-3 sm:gap-4 border-b border-[#2A2A2E]/50 pb-3">
-        {/* PERUBAHAN DI SINI: Menambahkan flex-1 pada container dan tombol untuk mobile agar membagi ruang secara otomatis */}
-        <div className="flex-1 flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+        {/* PERUBAHAN DI SINI: Container memakai divide-x untuk garis pemisah, tanpa p-1, dan inactive bg #0f0f0f */}
+        <div className="flex-1 sm:flex-none flex items-center border border-[#2A2A2E] rounded-lg overflow-x-auto [&::-webkit-scrollbar]:hidden divide-x divide-[#2A2A2E]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex-1 sm:flex-none flex justify-center items-center px-2 sm:px-5 py-2 sm:py-2.5 rounded-md text-[12px] sm:text-[14px] font-semibold transition-all whitespace-nowrap border ${
+              className={`flex-1 sm:flex-none flex justify-center items-center px-3 sm:px-6 py-2 sm:py-2.5 text-[12px] sm:text-[13px] font-bold tracking-wider transition-all whitespace-nowrap ${
                 activeTab === tab.id 
-                  ? 'bg-[#1A1A1A] border-[#4A4A4E] text-white shadow-sm' 
-                  : 'bg-[#0A0A0B] hover:bg-[#141414] border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white'
+                  ? 'bg-[#2A2A2E] text-white shadow-sm' 
+                  : 'bg-[#0f0f0f] text-[#8C8C8C] hover:bg-[#141414] hover:text-white'
               }`}
             >
               <span className="sm:hidden">{tab.mobile}</span>
