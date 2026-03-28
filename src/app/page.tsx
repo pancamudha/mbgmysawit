@@ -58,7 +58,7 @@ export default async function Home() {
           <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0">
             <LatestCompleted animes={latestCompleted} />
             
-            <div className="mt-8">
+            <div className="mt-4">
               <TopUpcoming animes={topUpcoming} />
             </div>
           </aside>

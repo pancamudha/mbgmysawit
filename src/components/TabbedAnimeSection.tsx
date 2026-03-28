@@ -72,21 +72,21 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
 
   return (
     <div className="w-full mt-10 sm:mt-12">
-      <div className="flex items-end justify-between mb-5 gap-4 border-b border-[#2A2A2E]/50 pb-2">
-        <div className="flex items-center gap-5 sm:gap-7 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-end justify-between mb-5 gap-4 border-b border-[#2A2A2E]/50 pb-3">
+        {/* PERUBAHAN DI SINI: gap disesuaikan menjadi gap-2 dan menggunakan style tombol yang sama dengan GenreBar */}
+        <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`relative pb-2 text-[15px] sm:text-[16px] font-bold whitespace-nowrap transition-colors ${
-                activeTab === tab.id ? 'text-white' : 'text-[#8C8C8C] hover:text-slate-300'
+              className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-md text-[13px] sm:text-[14px] font-semibold transition-all shrink-0 border ${
+                activeTab === tab.id 
+                  ? 'bg-[#1A1A1A] border-[#4A4A4E] text-white shadow-sm' 
+                  : 'bg-[#0A0A0B] hover:bg-[#141414] border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white'
               }`}
             >
               <span className="sm:hidden">{tab.mobile}</span>
               <span className="hidden sm:inline">{tab.desktop}</span>
-              {activeTab === tab.id && (
-                <span className="absolute bottom-[-2px] left-0 w-full h-[3px] bg-white rounded-t-sm" />
-              )}
             </button>
           ))}
         </div>
@@ -166,7 +166,7 @@ export default function TabbedAnimeSection({ topAiring = [], mostPopular = [], m
           })}
         </div>
       ) : (
-        <div className="w-full py-10 flex justify-center text-slate-500 font-medium">Memuat data...</div>
+        <div className="w-full py-10 flex justify-center text-slate-500 font-medium">Loading data...</div>
       )}
     </div>
   );
