@@ -10,6 +10,7 @@ import TrendingSection from '@/components/TrendingSection';
 import TopTenSidebar from '@/components/TopTenSidebar';
 import AiringSchedule from '@/components/AiringSchedule';
 import AdsterraBanner from '@/components/AdsterraBanner';
+import AdsterraSidebarBanner from '@/components/AdsterraSidebarBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,10 @@ export default async function Home() {
           {/* KOLOM KANAN (Sidebar) */}
           <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0">
             <LatestCompleted animes={latestCompleted} />
+
+            <div className="mt-6 w-full flex justify-center items-center overflow-hidden rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] min-h-[50px] py-1">
+               <AdsterraSidebarBanner />
+            </div>
             
             <div className="mt-6">
               <TopUpcoming animes={topUpcoming} />
