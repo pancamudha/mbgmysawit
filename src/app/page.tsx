@@ -6,6 +6,7 @@ import LatestCompleted from '@/components/LatestCompleted';
 import LatestEpisodes from '@/components/LatestEpisodes';
 import TabbedAnimeSection from '@/components/TabbedAnimeSection';
 import TopUpcoming from '@/components/TopUpcoming';
+import TrendingSection from '@/components/TrendingSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,7 @@ export default async function Home() {
   const latestCompleted = data.latestCompleted || [];
   const topUpcoming = data.topUpcoming || [];
   const genres = data.genres || [];
+  const trending = data.trending || []; // PERUBAHAN DI SINI: Menarik data trending
 
   return (
     <main className="w-full">
@@ -38,6 +40,10 @@ export default async function Home() {
 
       {/* 3. KONTEN BAWAH (DUA KOLOM DI DESKTOP) */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-12">
+        
+        {/* PERUBAHAN DI SINI: Section Trending ditempatkan sebelum pembagian kolom agar full width */}
+        <TrendingSection animes={trending} />
+
         <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
           
           {/* KOLOM KIRI (Konten Utama) */}
