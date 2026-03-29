@@ -45,7 +45,7 @@ export default async function Home() {
       </div>
 
       {/* 3. KONTEN BAWAH (DUA KOLOM DI DESKTOP) */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-12">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-4">
         
         {/* Section Trending */}
         <TrendingSection animes={trending} />
