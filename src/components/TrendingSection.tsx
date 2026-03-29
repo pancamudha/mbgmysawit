@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRef } from 'react';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 interface TrendingAnime {
   id: string;
@@ -19,6 +20,7 @@ interface TrendingSectionProps {
 
 export default function TrendingSection({ animes }: TrendingSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { getTitle } = useAnimeTitle();
 
   if (!animes || animes.length === 0) return null;
 
@@ -66,50 +68,54 @@ export default function TrendingSection({ animes }: TrendingSectionProps) {
           ref={scrollRef}
           className="flex flex-1 gap-4 overflow-hidden scroll-smooth"
         >
-          {animes.map((anime) => (
-            <Link
-              href={`/anime/${anime.id}`}
-              key={anime.id}
-              className={`flex h-[260px] bg-[#1f222a] rounded-xl overflow-hidden shrink-0 hover:scale-[1.02] transition-transform duration-300
-                w-[calc((100%-16px)/2)]      /* Mobile: 2 card */
-                sm:w-[calc((100%-32px)/3)]   /* Tablet: 3 card */
-                lg:w-[calc((100%-48px)/4)]   /* Layar sedang: 4 card */
-                xl:w-[calc((100%-64px)/5)]   /* Desktop: Tepat 5 card! */
-              `}
-            >
-              {/* Bagian Kiri (Judul Vertical & Angka) */}
-              <div className="w-[40px] shrink-0 flex flex-col justify-between items-center py-2 bg-[#0F0F0F] border-r border-[#2A2A2E]">
-                <div className="flex-1 w-full overflow-hidden flex justify-center mt-1">
-                  <span
-                    className="text-gray-300 text-sm font-medium whitespace-nowrap"
-                    style={{
-                      writingMode: 'vertical-rl',
-                      transform: 'rotate(180deg)',
-                      textOverflow: 'ellipsis',
-                      overflow: 'hidden',
-                    }}
-                    title={anime.title}
-                  >
-                    {anime.title}
+          {animes.map((anime) => {
+            const displayTitle = getTitle(anime.title, anime.japanese_title);
+
+            return (
+              <Link
+                href={`/anime/${anime.id}`}
+                key={anime.id}
+                className={`flex h-[260px] bg-[#1f222a] rounded-xl overflow-hidden shrink-0 hover:scale-[1.02] transition-transform duration-300
+                  w-[calc((100%-16px)/2)]      /* Mobile: 2 card */
+                  sm:w-[calc((100%-32px)/3)]   /* Tablet: 3 card */
+                  lg:w-[calc((100%-48px)/4)]   /* Layar sedang: 4 card */
+                  xl:w-[calc((100%-64px)/5)]   /* Desktop: Tepat 5 card! */
+                `}
+              >
+                {/* Bagian Kiri (Judul Vertical & Angka) */}
+                <div className="w-[40px] shrink-0 flex flex-col justify-between items-center py-2 bg-[#0F0F0F] border-r border-[#2A2A2E]">
+                  <div className="flex-1 w-full overflow-hidden flex justify-center mt-1">
+                    <span
+                      className="text-gray-300 text-sm font-medium whitespace-nowrap"
+                      style={{
+                        writingMode: 'vertical-rl',
+                        transform: 'rotate(180deg)',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                      }}
+                      title={displayTitle}
+                    >
+                      {displayTitle}
+                    </span>
+                  </div>
+                  <span className="text-[#ffbade] font-bold text-2xl leading-none mt-4 shrink-0">
+                    {anime.number}
                   </span>
                 </div>
-                <span className="text-[#ffbade] font-bold text-2xl leading-none mt-4 shrink-0">
-                  {anime.number}
-                </span>
-              </div>
 
-              {/* Bagian Kanan (Poster) */}
-              <div className="flex-1 relative shrink-0">
-                <Image
-                  src={anime.poster}
-                  alt={anime.title}
-                  fill
-                  sizes="(max-width: 768px) 140px, 200px"
-                  className="object-cover"
-                />
-              </div>
-            </Link>
-          ))}
+                {/* Bagian Kanan (Poster) */}
+                <div className="flex-1 relative shrink-0">
+                  <Image
+                    src={anime.poster}
+                    alt={displayTitle}
+                    fill
+                    sizes="(max-width: 768px) 140px, 200px"
+                    className="object-cover"
+                  />
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         {/* Tombol Navigasi */}
