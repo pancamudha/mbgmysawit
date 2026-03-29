@@ -51,7 +51,7 @@ export default function TrendingSection({ animes }: TrendingSectionProps) {
           href="/trending" 
           className="text-sm text-[#8C8C8C] hover:text-white active:text-white transition-colors flex items-center gap-1.5 font-medium pb-0.5"
         >
-          View more 
+          View More 
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>

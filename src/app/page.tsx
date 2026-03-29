@@ -7,12 +7,14 @@ import LatestEpisodes from '@/components/LatestEpisodes';
 import TabbedAnimeSection from '@/components/TabbedAnimeSection';
 import TopUpcoming from '@/components/TopUpcoming';
 import TrendingSection from '@/components/TrendingSection';
+import TopTenSidebar from '@/components/TopTenSidebar';
+import AiringSchedule from '@/components/AiringSchedule';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  // Mengambil data dari endpoint root API bowotheexplorer
-  const response = await fetchApi('/'); // atau '/home', sesuaikan route apimu
+  // Mengambil data dari endpoint root API
+  const response = await fetchApi('/'); 
   
   // Data dibungkus dalam properti "results"
   const data = response?.results || {};
@@ -26,7 +28,11 @@ export default async function Home() {
   const latestCompleted = data.latestCompleted || [];
   const topUpcoming = data.topUpcoming || [];
   const genres = data.genres || [];
-  const trending = data.trending || []; // PERUBAHAN DI SINI: Menarik data trending
+  const trending = data.trending || []; 
+  const topTen = data.topTen || { today: [], week: [], month: [] };
+  
+  // PERUBAHAN: Menarik data schedule
+  const schedule = data.today?.schedule || [];
 
   return (
     <main className="w-full">
@@ -41,7 +47,7 @@ export default async function Home() {
       {/* 3. KONTEN BAWAH (DUA KOLOM DI DESKTOP) */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-12">
         
-        {/* PERUBAHAN DI SINI: Section Trending ditempatkan sebelum pembagian kolom agar full width */}
+        {/* Section Trending */}
         <TrendingSection animes={trending} />
 
         <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
@@ -58,6 +64,9 @@ export default async function Home() {
                 mostFavorite={mostFavorite} 
               />
             </div>
+
+            {/* PERUBAHAN: Menambahkan Jadwal Tayang di bawah Tabbed Section */}
+            <AiringSchedule schedule={schedule} />
           </div>
 
           {/* KOLOM KANAN (Sidebar) */}
@@ -67,6 +76,8 @@ export default async function Home() {
             <div className="mt-6">
               <TopUpcoming animes={topUpcoming} />
             </div>
+
+            <TopTenSidebar data={topTen} />
           </aside>
 
         </div>
