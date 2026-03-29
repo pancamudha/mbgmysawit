@@ -9,7 +9,8 @@ export default function AdsterraSidebarThinBanner() {
       <head>
         <meta charset="utf-8">
         <style>
-          body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+          /* Body dibuat width 100% agar iklan otomatis di tengah kalau ada sisa ruang */
+          body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; width: 100%; height: 100%; }
         </style>
       </head>
       <body>
@@ -28,27 +29,39 @@ export default function AdsterraSidebarThinBanner() {
   `;
 
   return (
-    // Container dibuat flex-col agar iframe tersusun atas-bawah (tinggi total 100px)
-    <div className="w-full flex flex-col justify-center items-center overflow-hidden min-h-[100px]">
+    <div className="relative w-full flex flex-col justify-center items-center overflow-hidden min-h-[100px] bg-gradient-to-r from-[#080808] via-[#121212] to-[#080808]">
       
-      {/* Banner Tipis Bagian Atas */}
+      <div className="absolute inset-0 flex justify-between items-center px-1.5 sm:px-2 pointer-events-none opacity-[0.15]">
+        <span 
+          className="text-[8px] font-black tracking-widest text-white uppercase" 
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+        >
+          Advertisement
+        </span>
+        <span 
+          className="text-[8px] font-black tracking-widest text-white uppercase" 
+          style={{ writingMode: 'vertical-rl' }}
+        >
+          Advertisement
+        </span>
+      </div>
+      
       <iframe
         srcDoc={iframeHtml}
-        width="320"
+        width="100%"
         height="50"
         frameBorder="0"
         scrolling="no"
-        className="max-w-full border-b border-[#2A2A2E]/60"
+        className="relative z-10 block"
       />
       
-      {/* Banner Tipis Bagian Bawah */}
       <iframe
         srcDoc={iframeHtml}
-        width="320"
+        width="100%"
         height="50"
         frameBorder="0"
         scrolling="no"
-        className="max-w-full"
+        className="relative z-10 block"
       />
       
     </div>
