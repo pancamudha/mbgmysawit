@@ -9,6 +9,7 @@ import TopUpcoming from '@/components/TopUpcoming';
 import TrendingSection from '@/components/TrendingSection';
 import TopTenSidebar from '@/components/TopTenSidebar';
 import AiringSchedule from '@/components/AiringSchedule';
+import AdsterraBanner from '@/components/AdsterraBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export default async function Home() {
       </div>
 
       {/* 3. KONTEN BAWAH (DUA KOLOM DI DESKTOP) */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-4">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pb-8">
         
         {/* Section Trending */}
         <TrendingSection animes={trending} />
@@ -63,6 +64,10 @@ export default async function Home() {
                 mostPopular={mostPopular} 
                 mostFavorite={mostFavorite} 
               />
+            </div>
+
+            <div className="w-full mt-6 sm:mt-8 -mb-3 sm:-mb-5 flex justify-center items-center overflow-hidden rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] min-h-[90px] relative z-20">
+               <AdsterraBanner />
             </div>
 
             {/* PERUBAHAN: Menambahkan Jadwal Tayang di bawah Tabbed Section */}
