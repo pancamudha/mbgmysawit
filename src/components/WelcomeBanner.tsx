@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import AdsterraBanner from '@/components/AdsterraBanner';
+import AdsterraBanner from '@/components/Adsterra/AdsterraBanner';
 
 export default function WelcomeBanner() {
   const [isWelcomeMode, setIsWelcomeMode] = useState(true);

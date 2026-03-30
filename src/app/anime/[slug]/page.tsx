@@ -9,6 +9,7 @@ import AnimeRecommendations from '@/components/AnimeDetail/AnimeRecommendations'
 import AnimeTrailer from '@/components/AnimeDetail/AnimeTrailer';
 import LoadingScreen from '@/components/LoadingScreen'; 
 import { getAnilistTrailer, getAnilistCharacters, getMalTrailer, getMalCharacters } from '@/lib/api';
+import AdsterraNativeBanner from '@/components/Adsterra/AdsterraNativeBanner';
 
 export default function AnimeDetailPage() {
   const params = useParams();
@@ -147,6 +148,10 @@ export default function AnimeDetailPage() {
         {hasCharacters && (
           <AnimeCharacters characters={animeData.charactersVoiceActors} />
         )}
+
+        <div className="w-full flex justify-center items-center overflow-hidden rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] min-h-[90px] relative z-20">
+           <AdsterraNativeBanner />
+        </div>
         
         <AnimeRecommendations recommendations={animeData.recommended_data} />
 

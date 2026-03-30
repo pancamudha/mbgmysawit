@@ -9,8 +9,8 @@ import TopUpcoming from '@/components/TopUpcoming';
 import TrendingSection from '@/components/TrendingSection';
 import TopTenSidebar from '@/components/TopTenSidebar';
 import AiringSchedule from '@/components/AiringSchedule';
-import AdsterraBanner from '@/components/AdsterraBanner';
-import AdsterraSidebarBanner from '@/components/AdsterraSidebarBanner';
+import AdsterraBanner from '@/components/Adsterra/AdsterraBanner';
+import AdsterraSidebarBanner from '@/components/Adsterra/AdsterraSidebarBanner';
 
 export const dynamic = 'force-dynamic';
 

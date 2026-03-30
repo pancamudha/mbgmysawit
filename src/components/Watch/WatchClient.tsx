@@ -8,6 +8,7 @@ import ServerSelector from './ServerSelector';
 import WatchControls from './WatchControls';
 import WatchBreadcrumb from './WatchBreadcrumb';
 import LoadingScreen from '@/components/LoadingScreen';
+import AdsterraBanner from '@/components/Adsterra/AdsterraBanner';
 
 const VideoPlayer = dynamic(() => import('./VideoPlayer'), { 
   ssr: false,
@@ -195,6 +196,10 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
           currentEpisodeNumber={currentEpData?.episode_no}
           episodeData={currentEpData} 
         />
+
+        <div className="w-full mt-2 sm:mt-2 flex justify-center items-center overflow-hidden rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] min-h-[90px] relative z-20">
+           <AdsterraBanner />
+        </div>
 
         {/* ANIME INFORMATION (VERSI DESKTOP) */}
         <div className="hidden lg:block mt-2 p-4 rounded-xl bg-[#0F0F0F] border border-[#2A2A2E]">
