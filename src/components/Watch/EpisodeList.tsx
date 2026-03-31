@@ -1,8 +1,11 @@
 "use client";
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Eye, Image as ImageIcon, ChevronDown, LayoutGrid, Play, List } from 'lucide-react';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode }: any) {
+  const { getTitle } = useAnimeTitle(); // Memanggil Hook Bahasa
+  
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
@@ -151,6 +154,7 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
               {filteredEpisodes.map((ep: any) => {
                 const epId = ep.id ? ep.id.split('?ep=')[1] : ep.episode_no;
                 const isActive = currentEp === epId;
+                const displayTitle = getTitle(ep.title, ep.japanese_title);
 
                 return (
                   <button
@@ -170,8 +174,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                           {ep.episode_no}.
                         </span>
                       )}
-                      <h4 className={`text-[13px] sm:text-sm line-clamp-1 truncate transition-colors ${isActive ? 'text-white font-bold' : 'text-[#8C8C8C] font-semibold group-hover:text-white'}`} title={ep.title}>
-                        {ep.title || ep.japanese_title}
+                      <h4 className={`text-[13px] sm:text-sm line-clamp-1 truncate transition-colors ${isActive ? 'text-white font-bold' : 'text-[#8C8C8C] font-semibold group-hover:text-white'}`} title={displayTitle}>
+                        {displayTitle}
                       </h4>
                     </div>
 
@@ -198,6 +202,7 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
               {filteredEpisodes.map((ep: any) => {
                 const epId = ep.id ? ep.id.split('?ep=')[1] : ep.episode_no;
                 const isActive = currentEp === epId;
+                const displayTitle = getTitle(ep.title, ep.japanese_title);
 
                 return (
                   <button
@@ -213,13 +218,12 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                       {ep.thumbnail ? (
                         <img 
                           src={ep.thumbnail} 
-                          alt={ep.title}
+                          alt={displayTitle}
                           className={`w-full h-full object-cover transition-all ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center text-[#8C8C8C] gap-1 opacity-50 absolute inset-0">
-                          <ImageIcon className="w-6 h-6" />
-                          <span className="text-[10px] font-bold">NO IMAGE</span>
+                        <div className="flex items-center justify-center text-[#8C8C8C] opacity-50 absolute inset-0">
+                          <span className="text-2xl font-bold">{ep.episode_no}</span>
                         </div>
                       )}
                       
@@ -231,8 +235,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                     <div className="flex flex-col flex-1 p-2.5 justify-between min-w-0">
                       <div>
                         <div className="flex justify-between items-start gap-2">
-                          <h4 className={`text-sm line-clamp-1 truncate transition-colors ${isActive ? 'text-white font-bold' : 'text-[#8C8C8C] font-semibold group-hover:text-white'}`} title={ep.title}>
-                            {ep.title}
+                          <h4 className={`text-sm line-clamp-1 truncate transition-colors ${isActive ? 'text-white font-bold' : 'text-[#8C8C8C] font-semibold group-hover:text-white'}`} title={displayTitle}>
+                            {displayTitle}
                           </h4>
                           
                           {ep.filler ? (
@@ -246,8 +250,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                           )}
                         </div>
                         
-                        <p className={`text-xs mt-1.5 line-clamp-2 leading-snug transition-colors ${isActive ? 'text-slate-400 font-medium' : 'text-[#8C8C8C]'}`} title={ep.japanese_title}>
-                          {ep.japanese_title || 'No description available.'}
+                        <p className={`text-xs mt-1.5 line-clamp-2 leading-snug transition-colors ${isActive ? 'text-slate-400 font-medium' : 'text-[#8C8C8C]'}`} title={ep.description}>
+                          {ep.description || '...'}
                         </p>
                       </div>
                       
@@ -264,8 +268,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
         ) : (
           <div className="p-8 text-center flex flex-col items-center justify-center h-full gap-2">
             <Search className="w-8 h-8 text-[#4A4A4E] mb-2" />
-            <span className="text-sm font-bold text-white">Episode tidak ditemukan!</span>
-            <span className="text-[13px] text-[#8C8C8C]">Coba kata kunci lain.</span>
+            <span className="text-sm font-bold text-white">Episode not found!</span>
+            <span className="text-[13px] text-[#8C8C8C]">Try another keyword.</span>
           </div>
         )}
       </div>

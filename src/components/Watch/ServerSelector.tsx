@@ -1,16 +1,19 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { Download, Clock, ChevronDown } from 'lucide-react';
+import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 export default function ServerSelector({ servers, audioType, setAudioType, currentServer, setCurrentServer, currentEpisodeNumber, episodeData }: any) {
+  const { getTitle } = useAnimeTitle(); // Memanggil Hook Bahasa
+
   const subServers = servers?.filter((s: any) => s.type === 'sub') || [];
   const dubServers = servers?.filter((s: any) => s.type === 'dub') || [];
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownContainerRef = useRef<HTMLDivElement>(null);
 
-  // === LOGIKA SIMPLE ALA VIDEO PLAYER OFIK ===
-  const displayTitle = episodeData?.title || 'Loading...';
+  // === LOGIKA SIMPLE ALA VIDEO PLAYER OFIK (DITAMBAH TRANSLATION) ===
+  const displayTitle = getTitle(episodeData?.title, episodeData?.japanese_title) || 'Loading...';
   const displayEpisodeNo = episodeData?.episode_no || currentEpisodeNumber || '?';
   // ==========================================
 
