@@ -13,7 +13,7 @@ export default function WatchPage() {
 
   return (
     // Jarak pt-[20px] dipotong menjadi pt-[10px] agar lebih merapat ke Navbar
-    <div className="min-h-screen bg-[#0A0A0B] text-white pt-[10px] pb-10">
+    <div className="min-h-screen bg-[#0A0A0B] text-white pt-[10px] pb-8">
       <WatchClient slug={slug} initialEp={initialEp} />
     </div>
   );

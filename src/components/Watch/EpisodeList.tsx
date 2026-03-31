@@ -56,7 +56,7 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
   };
 
   return (
-    <div className="flex flex-col w-full bg-[#0A0A0A] border border-[#2A2A2E] rounded-lg overflow-hidden h-fit max-h-[348px] lg:h-full lg:max-h-[800px] font-sans relative z-0">
+    <div className="flex flex-col w-full bg-[#0A0A0A] border border-[#2A2A2E] rounded-lg overflow-hidden h-fit max-h-[348px] lg:h-full lg:max-h-none font-sans relative z-0">
       
       {/* Header Controls */}
       <div className="p-2 border-b border-[#2A2A2E] flex items-center gap-2 relative z-[20]">
@@ -118,7 +118,6 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
       </div>
 
       {/* Scrollable Content */}
-      {/* UPDATE DI SINI: custom-scrollbar diganti dengan utilitas Webkit tipis ala ExploreFilterBar */}
       <div className="flex-1 overflow-y-auto p-2 relative z-0 [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] hover:[&::-webkit-scrollbar-thumb]:bg-[#3A3A3E] [&::-webkit-scrollbar-thumb]:rounded-full">
         {filteredEpisodes.length > 0 ? (
           

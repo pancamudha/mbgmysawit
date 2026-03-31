@@ -153,40 +153,41 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
     // FITUR DIPERBAIKI: Menggunakan grid-cols-10 agar gap-3 tidak membuat elemen meluber melebihi 100% width
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-10 gap-3">
       
-      {/* KOLOM KIRI (7 PORSI DI DESKTOP, PENUH DI HP) */}
-      <div className="flex flex-col gap-1 lg:col-span-7 min-w-0">
+      {/* KOLOM KIRI ATAS (Breadcrumb, Video, Controls) - Baris 1 Desktop */}
+      <div className="flex flex-col gap-2 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-1">
+        <WatchBreadcrumb 
+          episodeData={currentEpData} 
+          activePlayer={activePlayer} 
+          setActivePlayer={setActivePlayer} 
+        />
+
+        <VideoPlayer 
+          streamData={streamData} 
+          loading={loadingStream} 
+          episodeData={currentEpData}
+          autoPlay={autoPlay}
+          autoSkip={autoSkip}
+          autoNext={autoNext}
+          onNextEpisode={handleNextEpisode}
+          activePlayer={activePlayer} 
+        />
         
-        <div className="flex flex-col gap-2">
-          <WatchBreadcrumb 
-            episodeData={currentEpData} 
-            activePlayer={activePlayer} 
-            setActivePlayer={setActivePlayer} 
-          />
+        <WatchControls 
+           currentEpIndex={episodes.findIndex(e => e.id.includes(currentEp || ''))}
+           totalEpisodes={episodes.length}
+           onPrev={() => {
+              const prev = episodes[episodes.findIndex(e => e.id.includes(currentEp || '')) - 1];
+              if (prev) handleEpisodeChange(prev.id.split('?ep=')[1]);
+           }}
+           onNext={handleNextEpisode}
+           autoPlay={autoPlay} setAutoPlay={setAutoPlay}
+           autoSkip={autoSkip} setAutoSkip={setAutoSkip}
+           autoNext={autoNext} setAutoNext={setAutoNext}
+        />
+      </div>
 
-          <VideoPlayer 
-            streamData={streamData} 
-            loading={loadingStream} 
-            episodeData={currentEpData}
-            autoPlay={autoPlay}
-            autoSkip={autoSkip}
-            autoNext={autoNext}
-            onNextEpisode={handleNextEpisode}
-            activePlayer={activePlayer} 
-          />
-          <WatchControls 
-             currentEpIndex={episodes.findIndex(e => e.id.includes(currentEp || ''))}
-             totalEpisodes={episodes.length}
-             onPrev={() => {
-                const prev = episodes[episodes.findIndex(e => e.id.includes(currentEp || '')) - 1];
-                if (prev) handleEpisodeChange(prev.id.split('?ep=')[1]);
-             }}
-             onNext={handleNextEpisode}
-             autoPlay={autoPlay} setAutoPlay={setAutoPlay}
-             autoSkip={autoSkip} setAutoSkip={setAutoSkip}
-             autoNext={autoNext} setAutoNext={setAutoNext}
-          />
-        </div>
-
+      {/* KOLOM KIRI BAWAH (Server, Ads, Info) - Baris 2 Desktop */}
+      <div className="flex flex-col gap-1 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-2 -mt-2">
         <ServerSelector 
           servers={servers} 
           audioType={audioType}
@@ -210,13 +211,16 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         </div>
       </div>
 
-      {/* KOLOM KANAN - EPISODE LIST (3 PORSI DI DESKTOP, PENUH DI HP) */}
-      <div className="flex flex-col lg:col-span-3 min-w-0">
-        <EpisodeList 
-          episodes={episodes} 
-          currentEp={currentEp} 
-          onSelectEpisode={handleEpisodeChange} 
-        />
+      {/* KOLOM KANAN - EPISODE LIST (3 PORSI DI DESKTOP) - Baris 1 Desktop */}
+      <div className="flex flex-col lg:col-span-3 min-w-0 lg:col-start-8 lg:row-start-1 relative">
+        {/* Trik absolute di desktop untuk meluruskan tinggi */}
+        <div className="w-full lg:absolute lg:inset-0">
+          <EpisodeList 
+            episodes={episodes} 
+            currentEp={currentEp} 
+            onSelectEpisode={handleEpisodeChange} 
+          />
+        </div>
       </div>
 
       {/* ANIME INFORMATION (VERSI MOBILE) */}
