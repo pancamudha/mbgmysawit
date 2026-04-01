@@ -40,17 +40,17 @@ export default function Footer() {
               <span className="text-[#8C8C8C] text-[13px] sm:text-[14px]">Browse anime alphabetically</span>
             </div>
             <div className="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2">
-              <Link href="/az-list" className="flex items-center justify-center h-[32px] px-3 rounded-md bg-[#161616] hover:bg-[#2a2a2a] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-colors">
+              <Link href="/az-list" className="flex items-center justify-center h-[32px] px-3 rounded-lg bg-[#141414] hover:bg-[#1A1A1A] border border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-all shadow-inner">
                 All
               </Link>
-              <Link href="/az-list/other" className="flex items-center justify-center h-[32px] min-w-[32px] px-2 rounded-md bg-[#161616] hover:bg-[#2a2a2a] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-colors">
+              <Link href="/az-list/other" className="flex items-center justify-center h-[32px] min-w-[32px] px-2 rounded-lg bg-[#141414] hover:bg-[#1A1A1A] border border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-all shadow-inner">
                 #
               </Link>
-              <Link href="/az-list/0-9" className="flex items-center justify-center h-[32px] px-2 rounded-md bg-[#161616] hover:bg-[#2a2a2a] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-colors">
+              <Link href="/az-list/0-9" className="flex items-center justify-center h-[32px] px-2 rounded-lg bg-[#141414] hover:bg-[#1A1A1A] border border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-all shadow-inner">
                 0-9
               </Link>
               {['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].map((letter) => (
-                <Link key={letter} href={`/az-list/${letter}`} className="flex items-center justify-center h-[32px] min-w-[32px] px-2 rounded-md bg-[#161616] hover:bg-[#2a2a2a] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-colors">
+                <Link key={letter} href={`/az-list/${letter}`} className="flex items-center justify-center h-[32px] min-w-[32px] px-2 rounded-lg bg-[#141414] hover:bg-[#1A1A1A] border border-[#2A2A2E] hover:border-[#4A4A4E] text-[#8C8C8C] hover:text-white text-[13px] font-medium transition-all shadow-inner">
                   {letter}
                 </Link>
               ))}
