@@ -1,7 +1,7 @@
 import { LayoutGrid } from "lucide-react";
 import ExploreFilterBar from "@/components/Explore/ExploreFilterBar";
 import ExplorePagination from "@/components/Explore/ExplorePagination";
-import { AnimeCardClient } from "@/components/Explore/AnimeCardClient"; // Import komponen client
+import { AnimeCardClient } from "@/components/Explore/AnimeCardClient";
 
 export const dynamic = "force-dynamic";
 
@@ -46,19 +46,34 @@ const STATUS_MAP: Record<string, string> = {
 };
 
 export default async function ExplorePage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ slug?: string[] }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const resolvedParams = await searchParams;
-
-  const format = typeof resolvedParams.format === 'string' ? resolvedParams.format : undefined;
-  const genre = typeof resolvedParams.genre === 'string' ? resolvedParams.genre : undefined;
-  const status = typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined;
-  const yearParam = typeof resolvedParams.year === 'string' ? resolvedParams.year : undefined;
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   
-  const queryParam = typeof resolvedParams.query === 'string' ? resolvedParams.query : undefined;
-  const page = typeof resolvedParams.page === 'string' ? parseInt(resolvedParams.page) : 1;
+  const slug = resolvedParams.slug || [];
+
+  // SMART PARSER: Mencari parameter tanpa mempedulikan urutannya
+  const formatParam = slug.find(s => Object.keys(FORMAT_MAP).includes(s.toLowerCase()));
+  const genreParam = slug.find(s => Object.keys(GENRE_MAP).includes(s.toLowerCase()));
+  const statusParam = slug.find(s => Object.keys(STATUS_MAP).includes(s.toLowerCase()));
+  const yearParam = slug.find(s => /^\d{4}$/.test(s)); 
+  
+  // ANTI-NaN PARSER untuk Nomor Halaman
+  let page = 1;
+  const pageIndex = slug.indexOf('page');
+  if (pageIndex !== -1 && slug[pageIndex + 1]) {
+    const parsedPage = parseInt(slug[pageIndex + 1]);
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      page = parsedPage;
+    }
+  }
+
+  const queryParam = typeof resolvedSearchParams.query === 'string' ? resolvedSearchParams.query : undefined;
 
   let animeList: AnimeItem[] = [];
   let totalPages = 200;
@@ -75,13 +90,16 @@ export default async function ExplorePage({
       });
       const json = await res.json();
       animeList = json?.results?.data || json?.data || [];
-      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 1;
+      
+      // Keamanan Anti-NaN
+      const rawTotal = parseInt(json?.results?.totalPage || json?.totalPage);
+      totalPages = !isNaN(rawTotal) && rawTotal > 0 ? rawTotal : 1;
     } else {
       const queryParams = new URLSearchParams();
       
-      if (format) queryParams.append("type", FORMAT_MAP[format.toLowerCase()] || format);
-      if (genre) queryParams.append("genres", GENRE_MAP[genre.toLowerCase()] || genre.replace(/-/g, '_'));
-      if (status) queryParams.append("status", STATUS_MAP[status.toLowerCase()] || status.replace(/-/g, '_'));
+      if (formatParam) queryParams.append("type", FORMAT_MAP[formatParam.toLowerCase()]);
+      if (genreParam) queryParams.append("genres", GENRE_MAP[genreParam.toLowerCase()]);
+      if (statusParam) queryParams.append("status", STATUS_MAP[statusParam.toLowerCase()]);
       
       if (yearParam) {
         queryParams.append("sy", yearParam);
@@ -101,7 +119,10 @@ export default async function ExplorePage({
       const json = await res.json();
       
       animeList = json?.results?.data || json?.data || [];
-      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 200;
+      
+      // Keamanan Anti-NaN (fallback ke 200 jika API filter tidak memberikan totalPages)
+      const rawTotal = parseInt(json?.results?.totalPage || json?.totalPage);
+      totalPages = !isNaN(rawTotal) && rawTotal > 0 ? rawTotal : 200;
     }
   } catch (error) {
     console.error("Error fetching data:", error);

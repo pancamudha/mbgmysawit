@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ExplorePaginationProps {
@@ -14,66 +13,72 @@ export default function ExplorePagination({
   totalPages,
 }: ExplorePaginationProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
 
-  const createQueryString = useCallback(
-    (pageNumber: number) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("page", pageNumber.toString());
-      return params.toString();
-    },
-    [searchParams]
-  );
+  const slug = (params.slug as string[]) || [];
+  
+  // Memisahkan base URL (filter) dari kata 'page'
+  const baseFilters = slug.filter((item, index) => {
+    if (item === 'page') return false;
+    if (slug[index - 1] === 'page') return false;
+    return true;
+  });
+
+  // Anti-NaN Guards untuk Pagination Render
+  const safeCurrentPage = Number.isInteger(currentPage) && currentPage > 0 ? currentPage : 1;
+  const safeTotalPages = Number.isInteger(totalPages) && totalPages > 0 ? totalPages : 1;
+
+  const getPageUrl = (pageNumber: number) => {
+    const parts = ['/explore', ...baseFilters, 'page', pageNumber.toString()];
+    return parts.join('/');
+  };
 
   const handlePageChange = (pageNumber: number | string) => {
-    if (typeof pageNumber === "number" && pageNumber !== currentPage) {
-      router.push(`/explore?${createQueryString(pageNumber)}`);
+    if (typeof pageNumber === "number" && pageNumber !== safeCurrentPage) {
+      router.push(getPageUrl(pageNumber));
     }
   };
 
   const getPages = () => {
     const pages: (number | string)[] = [];
     
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    if (safeTotalPages <= 7) {
+      for (let i = 1; i <= safeTotalPages; i++) pages.push(i);
     } else {
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, "...", totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      if (safeCurrentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, "...", safeTotalPages);
+      } else if (safeCurrentPage >= safeTotalPages - 3) {
+        pages.push(1, "...", safeTotalPages - 4, safeTotalPages - 3, safeTotalPages - 2, safeTotalPages - 1, safeTotalPages);
       } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+        pages.push(1, "...", safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1, "...", safeTotalPages);
       }
     }
     return pages;
   };
 
-  if (totalPages <= 1) return null;
+  if (safeTotalPages <= 1) return null;
 
   return (
     <div className="flex items-center justify-center mt-10 mb-4 sm:mb-5 w-full">
-      {/* Tombol Previous */}
       <button
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
-        // Mengubah mr-3 menjadi mr-4 (di mobile) dan mr-5 menjadi mr-6 (di PC)
+        onClick={() => handlePageChange(safeCurrentPage - 1)}
+        disabled={safeCurrentPage <= 1}
         className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616] disabled:opacity-50 disabled:cursor-not-allowed transition-all mr-4 sm:mr-6 shrink-0"
         aria-label="Previous Page"
       >
         <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
-      {/* Nomor Halaman */}
       <div className="flex items-center gap-1.5 sm:gap-2">
         {getPages().map((page, index) => {
           
           let hideOnMobile = false;
-          if (totalPages > 7) {
-            if (currentPage <= 4 && page === 5) {
+          if (safeTotalPages > 7) {
+            if (safeCurrentPage <= 4 && page === 5) {
               hideOnMobile = true;
-            } else if (currentPage >= totalPages - 3 && page === totalPages - 4) {
+            } else if (safeCurrentPage >= safeTotalPages - 3 && page === safeTotalPages - 4) {
               hideOnMobile = true;
-            } else if (currentPage > 4 && currentPage < totalPages - 3 && page === currentPage + 1) {
+            } else if (safeCurrentPage > 4 && safeCurrentPage < safeTotalPages - 3 && page === safeCurrentPage + 1) {
               hideOnMobile = true;
             }
           }
@@ -84,7 +89,7 @@ export default function ExplorePagination({
               onClick={() => handlePageChange(page)}
               disabled={page === "..."}
               className={`${hideOnMobile ? 'hidden sm:flex' : 'flex'} items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] text-[13px] sm:text-sm font-medium transition-all ${
-                page === currentPage
+                page === safeCurrentPage
                   ? "bg-[#161616] text-white border border-[#2A2A2E]" 
                   : page === "..."
                   ? "bg-transparent text-[#8C8C8C] cursor-default border border-transparent"
@@ -97,11 +102,9 @@ export default function ExplorePagination({
         })}
       </div>
 
-      {/* Tombol Next */}
       <button
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage >= totalPages}
-        // Mengubah ml-3 menjadi ml-4 (di mobile) dan ml-5 menjadi ml-6 (di PC)
+        onClick={() => handlePageChange(safeCurrentPage + 1)}
+        disabled={safeCurrentPage >= safeTotalPages}
         className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] bg-[#0F0F0F] text-[#8C8C8C] border border-[#1C1C1F] hover:border-[#2A2A2E] hover:text-white hover:bg-[#161616] disabled:opacity-50 disabled:cursor-not-allowed transition-all ml-4 sm:ml-6 shrink-0"
         aria-label="Next Page"
       >

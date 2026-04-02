@@ -1,35 +1,36 @@
 "use client";
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AZListPaginationProps {
   currentPage: number;
   totalPages: number;
+  currentLetter: string; // Tambahan prop untuk mengetahui huruf saat ini
 }
 
 export default function AZListPagination({
   currentPage,
   totalPages,
+  currentLetter,
 }: AZListPaginationProps) {
   const router = useRouter();
-  const pathname = usePathname(); // Mengambil path saat ini (cth: /az-list atau /az-list/A)
-  const searchParams = useSearchParams();
 
-  const createQueryString = useCallback(
-    (pageNumber: number) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("page", pageNumber.toString());
-      return params.toString();
-    },
-    [searchParams]
-  );
+  // Fungsi untuk menghasilkan URL yang cantik tanpa tanda tanya (?)
+  const getPageUrl = (pageNumber: number) => {
+    const letterPath = currentLetter === "all" ? "" : `/${currentLetter}`;
+    
+    // Jika kembali ke halaman 1, sembunyikan "/page/1" agar URL lebih bersih
+    if (pageNumber === 1) {
+      return `/az-list${letterPath}`;
+    }
+    
+    return `/az-list${letterPath}/page/${pageNumber}`;
+  };
 
   const handlePageChange = (pageNumber: number | string) => {
     if (typeof pageNumber === "number" && pageNumber !== currentPage) {
-      // Mengarahkan ke path saat ini + query parameternya
-      router.push(`${pathname}?${createQueryString(pageNumber)}`);
+      router.push(getPageUrl(pageNumber));
     }
   };
 
@@ -54,7 +55,6 @@ export default function AZListPagination({
 
   return (
     <div className="flex items-center justify-center mt-10 mb-4 sm:mb-5 w-full">
-      {/* Tombol Previous */}
       <button
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage <= 1}
@@ -64,10 +64,8 @@ export default function AZListPagination({
         <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
-      {/* Nomor Halaman */}
       <div className="flex items-center gap-1.5 sm:gap-2">
         {getPages().map((page, index) => {
-          
           let hideOnMobile = false;
           if (totalPages > 7) {
             if (currentPage <= 4 && page === 5) {
@@ -98,7 +96,6 @@ export default function AZListPagination({
         })}
       </div>
 
-      {/* Tombol Next */}
       <button
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}

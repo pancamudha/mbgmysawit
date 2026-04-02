@@ -1,10 +1,9 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { X, LayoutGrid, Tag, PlayCircle, Calendar, ChevronDown, Check } from "lucide-react";
 
-// Opsi filter (label dan value)
 const formatOptions = [
   { value: "", label: "All Format" },
   { value: "tv", label: "TV" },
@@ -80,76 +79,71 @@ for (let year = 2026; year >= 1945; year--) {
 
 export default function ExploreFilterBar() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
+  
+  const slug = (params.slug as string[]) || [];
+  
+  const currentFormat = slug.find(s => formatOptions.some(o => o.value === s)) || "";
+  const currentGenre = slug.find(s => genreOptions.some(o => o.value === s)) || "";
+  const currentStatus = slug.find(s => statusOptions.some(o => o.value === s)) || "";
+  const currentYear = slug.find(s => /^\d{4}$/.test(s)) || "";
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(name, value);
-      } else {
-        params.delete(name);
-      }
-      params.set("page", "1");
-      return params.toString();
-    },
-    [searchParams]
-  );
+  const buildPath = (f: string, g: string, s: string, y: string) => {
+    const parts = ['/explore'];
+    if (f) parts.push(f);
+    if (g) parts.push(g);
+    if (s) parts.push(s);
+    if (y) parts.push(y);
+    parts.push('page', '1');
+    
+    return parts.join('/');
+  };
 
   const handleFilterChange = (key: string, value: string) => {
-    router.push(`/explore?${createQueryString(key, value)}`);
+    const f = key === 'format' ? value : currentFormat;
+    const g = key === 'genre' ? value : currentGenre;
+    const s = key === 'status' ? value : currentStatus;
+    const y = key === 'year' ? value : currentYear;
+    
+    router.push(buildPath(f, g, s, y));
   };
 
   const handleReset = () => {
     router.push("/explore");
   };
 
-  // Komponen Dropdown Kustom yang dapat digunakan kembali
   const Dropdown = ({
     labelKey,
     options,
     icon: Icon,
     paramKey,
+    selectedValue,
   }: {
     labelKey: string;
     options: { value: string; label: string }[];
     icon: any;
     paramKey: string;
+    selectedValue: string;
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Dapatkan nilai terpilih dari searchParams
-    const selectedValue = searchParams.get(paramKey) || "";
-    // Temukan label terpilih atau gunakan label default
-    const selectedLabel =
-      options.find((option) => option.value === selectedValue)?.label ||
-      labelKey;
+    const selectedLabel = options.find((o) => o.value === selectedValue)?.label || labelKey;
 
-    // Tutup menu saat klik di luar
     useEffect(() => {
       function handleClickOutside(event: MouseEvent) {
-        if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(event.target as Node)
-        ) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
           setIsOpen(false);
         }
       }
       document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     const isApplied = selectedValue !== "";
 
     return (
-      <div
-        ref={dropdownRef}
-        className="relative flex-1 min-w-[150px] group transition-all"
-      >
-        {/* Pemicu Dropdown (Tombol) */}
+      <div ref={dropdownRef} className="relative flex-1 min-w-[150px] group transition-all">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={`w-full h-11 bg-[#0F0F0F] text-[13px] font-medium border ${
@@ -157,29 +151,16 @@ export default function ExploreFilterBar() {
           } hover:border-[#3A3A3E] rounded-[10px] pl-[36px] pr-8 flex items-center justify-between transition-all cursor-pointer focus:outline-none`}
         >
           <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
-            <Icon
-              className={`w-3.5 h-3.5 transition-colors ${
-                isOpen || isApplied ? "text-white" : "text-[#8C8C8C]"
-              } group-hover:text-white`}
-            />
+            <Icon className={`w-3.5 h-3.5 transition-colors ${isOpen || isApplied ? "text-white" : "text-[#8C8C8C]"} group-hover:text-white`} />
           </div>
-          <span
-            className={`truncate transition-colors ${
-              isOpen || isApplied ? "text-white" : "text-slate-200"
-            } group-hover:text-white`}
-          >
+          <span className={`truncate transition-colors ${isOpen || isApplied ? "text-white" : "text-slate-200"} group-hover:text-white`}>
             {selectedLabel}
           </span>
           <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none">
-            <ChevronDown
-              className={`w-3.5 h-3.5 transition-all duration-200 ${
-                isOpen ? "rotate-180 text-white" : "text-[#8C8C8C] group-hover:text-white"
-              }`}
-            />
+            <ChevronDown className={`w-3.5 h-3.5 transition-all duration-200 ${isOpen ? "rotate-180 text-white" : "text-[#8C8C8C] group-hover:text-white"}`} />
           </div>
         </button>
 
-        {/* Menu Dropdown (Daftar Pilihan) dengan Custom Scrollbar dan ukuran pas 7 item */}
         {isOpen && (
           <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-[#0F0F0F] border border-[#2A2A2E] rounded-[10px] py-1.5 z-50 shadow-2xl max-h-[278px] overflow-y-auto [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] hover:[&::-webkit-scrollbar-thumb]:bg-[#3A3A3E] [&::-webkit-scrollbar-thumb]:rounded-full">
             {options.map((option) => (
@@ -190,14 +171,11 @@ export default function ExploreFilterBar() {
                   setIsOpen(false);
                 }}
                 className={`flex items-center justify-between w-full text-left px-4 py-[9px] text-[13px] font-medium transition-colors ${
-                  selectedValue === option.value
-                    ? "text-white bg-[#2D2D2F]" // Warna background saat item aktif
-                    : "text-[#8C8C8C] hover:text-white hover:bg-[#1C1C1F]" // Hover background agar tidak hanya teks putih
+                  selectedValue === option.value ? "text-white bg-[#2D2D2F]" : "text-[#8C8C8C] hover:text-white hover:bg-[#1C1C1F]"
                 }`}
               >
                 <span className="truncate">{option.label}</span>
                 {selectedValue === option.value && (
-                  // Ikon check dibuat lebih tipis menyerupai JustAnime
                   <Check className="w-[14px] h-[14px] text-[#8C8C8C] shrink-0" strokeWidth={1.5} />
                 )}
               </button>
@@ -210,39 +188,11 @@ export default function ExploreFilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-[22px] w-full">
-      {/* Format Filter */}
-      <Dropdown
-        labelKey="All Format"
-        options={formatOptions}
-        icon={LayoutGrid}
-        paramKey="format"
-      />
+      <Dropdown labelKey="All Format" options={formatOptions} icon={LayoutGrid} paramKey="format" selectedValue={currentFormat} />
+      <Dropdown labelKey="All Genres" options={genreOptions} icon={Tag} paramKey="genre" selectedValue={currentGenre} />
+      <Dropdown labelKey="All Status" options={statusOptions} icon={PlayCircle} paramKey="status" selectedValue={currentStatus} />
+      <Dropdown labelKey="All Years" options={yearOptions} icon={Calendar} paramKey="year" selectedValue={currentYear} />
 
-      {/* Genre Filter */}
-      <Dropdown
-        labelKey="All Genres"
-        options={genreOptions}
-        icon={Tag}
-        paramKey="genre"
-      />
-
-      {/* Status Filter */}
-      <Dropdown
-        labelKey="All Status"
-        options={statusOptions}
-        icon={PlayCircle}
-        paramKey="status"
-      />
-
-      {/* Year Filter */}
-      <Dropdown
-        labelKey="All Years"
-        options={yearOptions}
-        icon={Calendar}
-        paramKey="year"
-      />
-
-      {/* Tombol Reset */}
       <button
         onClick={handleReset}
         className="flex-1 min-w-[150px] flex items-center justify-start gap-2 pl-3.5 h-11 text-[13px] font-medium text-[#8C8C8C] bg-[#0F0F0F] border border-[#1C1C1F] hover:border-[#2A2A2E] rounded-[10px] hover:text-white hover:bg-[#161616] transition-all focus:outline-none"

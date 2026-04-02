@@ -1,7 +1,7 @@
 import { LayoutGrid } from "lucide-react";
-import AZListPagination from "@/components/AZ-List/AZListPagination"; // Import diubah ke AZListPagination
+import ExploreFilterBar from "@/components/Explore/ExploreFilterBar";
+import ExplorePagination from "@/components/Explore/ExplorePagination";
 import { AnimeCardClient } from "@/components/Explore/AnimeCardClient";
-import AZFilterBar from "@/components/AZ-List/AZFilterBar";
 
 export const dynamic = "force-dynamic";
 
@@ -22,53 +22,97 @@ interface AnimeItem {
 }
 
 export const metadata = {
-  title: "A-Z List - Animaple",
-  description: "Browse anime alphabetically from A to Z",
+  title: "Explore - Animaple",
+  description: "Search and filter your favorite anime",
 };
 
-export default async function AZListPage({
+const FORMAT_MAP: Record<string, string> = {
+  "movie": "1", "tv": "2", "ova": "3", "ona": "4", "special": "5", "music": "6"
+};
+
+const GENRE_MAP: Record<string, string> = {
+  "action": "1", "adventure": "2", "cars": "3", "comedy": "4", "dementia": "5", "demons": "6",
+  "mystery": "7", "drama": "8", "ecchi": "9", "fantasy": "10", "game": "11", "historical": "13",
+  "horror": "14", "kids": "15", "magic": "16", "martial-arts": "17", "mecha": "18", "music": "19",
+  "parody": "20", "samurai": "21", "romance": "22", "school": "23", "sci-fi": "24", "shoujo": "25",
+  "shoujo-ai": "26", "shounen": "27", "shounen-ai": "28", "space": "29", "sports": "30",
+  "super-power": "31", "vampire": "32", "harem": "35", "slice-of-life": "36", "supernatural": "37",
+  "military": "38", "police": "39", "psychological": "40", "thriller": "41", "seinen": "42",
+  "josei": "43", "isekai": "44"
+};
+
+const STATUS_MAP: Record<string, string> = {
+  "finished": "1", "currently-airing": "2", "not-yet-aired": "3"
+};
+
+export default async function ExplorePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ letter?: string[] }>;
+  params: Promise<{ slug?: string[] }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
+  
+  const slug = resolvedParams.slug || [];
 
-  // Tangkap huruf dari segment URL (misal: /az-list/A -> 'A')
-  const currentLetter = resolvedParams.letter ? resolvedParams.letter[0].toLowerCase() : "all";
-  const page = typeof resolvedSearchParams.page === 'string' ? parseInt(resolvedSearchParams.page) : 1;
+  // SMART PARSER: Mencari parameter berdasarkan kamus data tanpa mempedulikan urutannya di URL
+  const formatParam = slug.find(s => Object.keys(FORMAT_MAP).includes(s.toLowerCase()));
+  const genreParam = slug.find(s => Object.keys(GENRE_MAP).includes(s.toLowerCase()));
+  const statusParam = slug.find(s => Object.keys(STATUS_MAP).includes(s.toLowerCase()));
+  const yearParam = slug.find(s => /^\d{4}$/.test(s)); // Mencari angka 4 digit
+  
+  const pageIndex = slug.indexOf('page');
+  const page = pageIndex !== -1 && slug[pageIndex + 1] ? parseInt(slug[pageIndex + 1]) : 1;
+
+  const queryParam = typeof resolvedSearchParams.query === 'string' ? resolvedSearchParams.query : undefined;
 
   let animeList: AnimeItem[] = [];
-  let totalPages = 1;
+  let totalPages = 200;
 
   const baseUrl = process.env.API_BASE_URL || 'https://bowotheexplorer.vercel.app';
   const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
   const secretKey = process.env.ANIMAPLE_SECRET_KEY || '';
 
   try {
-    // Susun endpoint berdasarkan rute yang diakses
-    // Default endpoint: /api/az-list
-    // Endpoint spesifik: /api/az-list/A, /api/az-list/other, dll
-    const endpoint = currentLetter === "all" 
-      ? `${apiUrl}/az-list?page=${page}` 
-      : `${apiUrl}/az-list/${currentLetter}?page=${page}`;
+    if (queryParam) {
+      const res = await fetch(`${apiUrl}/search?keyword=${encodeURIComponent(queryParam)}&page=${page}`, { 
+        cache: 'no-store',
+        headers: { 'x-animaple-key': secretKey }
+      });
+      const json = await res.json();
+      animeList = json?.results?.data || json?.data || [];
+      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 1;
+    } else {
+      const queryParams = new URLSearchParams();
+      
+      if (formatParam) queryParams.append("type", FORMAT_MAP[formatParam.toLowerCase()]);
+      if (genreParam) queryParams.append("genres", GENRE_MAP[genreParam.toLowerCase()]);
+      if (statusParam) queryParams.append("status", STATUS_MAP[statusParam.toLowerCase()]);
+      
+      if (yearParam) {
+        queryParams.append("sy", yearParam);
+        queryParams.append("sm", "1");
+        queryParams.append("sd", "1");
+        queryParams.append("ey", yearParam); 
+        queryParams.append("em", "12");
+        queryParams.append("ed", "31");
+      }
+      
+      queryParams.append("page", page.toString());
 
-    const res = await fetch(endpoint, { 
-      cache: 'no-store',
-      headers: { 'x-animaple-key': secretKey }
-    });
-    
-    const json = await res.json();
-    
-    if (json.success) {
-      animeList = json.results?.data || [];
-      // Mengambil totalPages dari JSON response (perhatikan 's' pada totalPages)
-      totalPages = Number(json.results?.totalPages) || 1;
+      const res = await fetch(`${apiUrl}/filter?${queryParams.toString()}`, { 
+        cache: 'no-store',
+        headers: { 'x-animaple-key': secretKey }
+      });
+      const json = await res.json();
+      
+      animeList = json?.results?.data || json?.data || [];
+      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 200;
     }
   } catch (error) {
-    console.error("Error fetching AZ list data:", error);
+    console.error("Error fetching data:", error);
   }
   
   const currentYear = new Date().getFullYear();
@@ -77,30 +121,36 @@ export default async function AZListPage({
     <div className="min-h-screen bg-[#0A0A0A] text-white px-4 md:px-8 pb-5 md:pb-6 pt-[6px] md:pt-[10px]">
       <div className="max-w-[1600px] mx-auto">
         
-        {/* Render Komponen Navigasi A-Z */}
-        <AZFilterBar />
+        <ExploreFilterBar />
 
-        {/* Tampilan Grid Anime */}
+        {queryParam && (
+          <div className="flex items-center gap-4 mb-6 sm:mb-8 w-full mt-2">
+            <h2 className="text-[12px] sm:text-[14px] font-semibold tracking-[0.1em] text-[#8C8C8C] whitespace-nowrap uppercase">
+              SEARCH RESULT FOR <span className="text-white ml-1">"{queryParam}"</span>
+            </h2>
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-[#2A2A2E] to-transparent"></div>
+          </div>
+        )}
+
         {animeList.length > 0 ? (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-5">
             {animeList.map((anime, index) => (
               <AnimeCardClient 
                 key={`${anime.id}-${index}`} 
                 anime={anime} 
-                fallbackYear={currentYear.toString()} 
+                fallbackYear={yearParam || currentYear.toString()} 
               />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[50vh] text-[#8C8C8C]">
+          <div className="flex flex-col items-center justify-center h-[50vh] text-gray-400">
             <LayoutGrid className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg font-medium">No anime found in this category.</p>
+            <p className="text-lg">No anime found.</p>
           </div>
         )}
 
-        {/* Pagination Khusus AZ-List */}
         {animeList.length > 0 && (
-          <AZListPagination 
+          <ExplorePagination 
             currentPage={page} 
             totalPages={totalPages} 
           />
