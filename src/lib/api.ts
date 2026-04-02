@@ -13,7 +13,7 @@ export async function fetchApi(endpoint: string) {
     });
 
     if (!response.ok) {
-      throw new Error(`Gagal mengambil data dari API: ${response.status}`);
+      throw new Error(`Failed to fetch data from the API. Status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -64,7 +64,7 @@ export async function getAnilistTrailer(anilistId: string | number) {
       }];
     }
   } catch (error) {
-    console.error("Gagal mengambil trailer dari AniList:", error);
+    console.error("Failed to retrieve trailer data from AniList:", error);
   }
 
   return [];
@@ -131,7 +131,7 @@ export async function getAnilistCharacters(anilistId: string | number) {
       };
     });
   } catch (error) {
-    console.error("Gagal mengambil karakter dari AniList:", error);
+    console.error("Failed to retrieve character data from AniList:", error);
   }
 
   return [];
@@ -156,7 +156,7 @@ export async function getMalTrailer(malId: string | number) {
       }];
     }
   } catch (error) {
-    console.error("Gagal mengambil trailer dari MyAnimeList:", error);
+    console.error("Failed to retrieve trailer data from MyAnimeList:", error);
   }
 
   return [];
@@ -194,7 +194,7 @@ export async function getMalCharacters(malId: string | number) {
       };
     });
   } catch (error) {
-    console.error("Gagal mengambil karakter dari MyAnimeList:", error);
+    console.error("Failed to retrieve character data from MyAnimeList:", error);
   }
 
   return [];
@@ -252,20 +252,20 @@ export async function fetchSchedule(date: string, tzOffset: number) {
   return await fetchApi(endpoint);
 }
 
-// Tambahkan variabel cache di luar fungsi biar tersimpan di memori
+// Initialize cache variable outside the function for in-memory storage
 const posterCache = new Map<string, string>();
 
 export async function getPosterFromDetail(id: string) {
   if (!id) return null;
 
-  // Lapis 1: Cek di Memory Cache (Paling cepat)
+  // Layer 1: Check Memory Cache (Fastest retrieval)
   if (posterCache.has(id)) return posterCache.get(id);
 
-  // Lapis 2: Cek di Session Storage (Kalau user habis refresh halaman)
+  // Layer 2: Check Session Storage (Persists across page refreshes)
   if (typeof window !== "undefined") {
     const cachedPoster = sessionStorage.getItem(`poster_${id}`);
     if (cachedPoster) {
-      posterCache.set(id, cachedPoster); // Masukin lagi ke memori
+      posterCache.set(id, cachedPoster); // Restore to memory cache
       return cachedPoster;
     }
   }
@@ -277,7 +277,7 @@ export async function getPosterFromDetail(id: string) {
     if (data && data.success && data.results && data.results.data) {
       const posterUrl = data.results.data.poster;
       
-      // Simpan ke Cache kalau berhasil!
+      // Store in Cache upon successful retrieval
       posterCache.set(id, posterUrl);
       if (typeof window !== "undefined") {
         sessionStorage.setItem(`poster_${id}`, posterUrl);
@@ -288,7 +288,7 @@ export async function getPosterFromDetail(id: string) {
     
     return null;
   } catch (error) {
-    console.error("Gagal mengambil detail poster buat Ofik:", error);
+    console.error("Failed to retrieve poster details:", error);
     return null;
   }
 }

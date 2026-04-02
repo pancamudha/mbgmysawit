@@ -1,5 +1,5 @@
 import { LayoutGrid } from "lucide-react";
-import ExplorePagination from "@/components/Explore/ExplorePagination";
+import AZListPagination from "@/components/AZ-List/AZListPagination"; // Import diubah ke AZListPagination
 import { AnimeCardClient } from "@/components/Explore/AnimeCardClient";
 import AZFilterBar from "@/components/AZ-List/AZFilterBar";
 
@@ -98,9 +98,9 @@ export default async function AZListPage({
           </div>
         )}
 
-        {/* Pagination Reuse dari Explore */}
+        {/* Pagination Khusus AZ-List */}
         {animeList.length > 0 && (
-          <ExplorePagination 
+          <AZListPagination 
             currentPage={page} 
             totalPages={totalPages} 
           />
