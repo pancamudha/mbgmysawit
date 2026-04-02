@@ -3,34 +3,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, Clock, ChevronDown } from 'lucide-react';
 import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
-export default function ServerSelector({ servers, audioType, setAudioType, currentServer, setCurrentServer, currentEpisodeNumber, episodeData }: any) {
+export default function ServerSelector({ 
+  mwData, 
+  providersList, 
+  currentProvider, 
+  setCurrentProvider, 
+  audioType, 
+  setAudioType, 
+  currentEpisodeNumber, 
+  episodeData 
+}: any) {
   const { getTitle } = useAnimeTitle(); // Memanggil Hook Bahasa
-
-  // MENDETEKSI APAKAH DATA MENGGUNAKAN FORMAT BARU (MAPLEWATCH)
-  const isNewFormat = servers?.some((s: any) => s.server !== undefined && (s.type === 'hls' || s.type === 'embed'));
-
-  let subServers: any[] = [];
-  let dubServers: any[] = [];
-
-  if (isNewFormat) {
-    // Mengekstrak nama server yang unik dari array streams Maplewatch
-    const uniqueServers = Array.from(new Set(servers.map((s: any) => s.server)));
-    const mapped = uniqueServers.map((name: any) => ({ serverName: name, data_id: name }));
-    subServers = mapped;
-    dubServers = mapped;
-  } else {
-    // Fallback format lama (Bowo)
-    subServers = servers?.filter((s: any) => s.type === 'sub') || [];
-    dubServers = servers?.filter((s: any) => s.type === 'dub') || [];
-  }
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownContainerRef = useRef<HTMLDivElement>(null);
 
-  // === LOGIKA SIMPLE ALA VIDEO PLAYER OFIK (DITAMBAH TRANSLATION) ===
   const displayTitle = getTitle(episodeData?.title, episodeData?.japanese_title) || 'Loading...';
   const displayEpisodeNo = episodeData?.episode_no || currentEpisodeNumber || '?';
-  // ==========================================
+
+  // Menentukan audio apa saja yang tersedia untuk provider saat ini
+  const availableAudioTypes = [];
+  if (mwData?.[currentProvider]?.episodes?.sub?.length > 0) availableAudioTypes.push('sub');
+  if (mwData?.[currentProvider]?.episodes?.dub?.length > 0) availableAudioTypes.push('dub');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,19 +36,7 @@ export default function ServerSelector({ servers, audioType, setAudioType, curre
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleServerChange = (type: string, serverName: string) => {
-    setAudioType(type);
-    setCurrentServer(serverName.toLowerCase());
-    setOpenDropdown(null);
-  };
-
-  const activeSubLabel = audioType === 'sub' 
-    ? subServers.find((s: any) => s.serverName.toLowerCase() === currentServer.toLowerCase())?.serverName || (subServers[0]?.serverName || 'Select')
-    : (subServers[0]?.serverName || 'Select');
-
-  const activeDubLabel = audioType === 'dub'
-    ? dubServers.find((s: any) => s.serverName.toLowerCase() === currentServer.toLowerCase())?.serverName || 'Any'
-    : 'Any';
+  const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
   return (
     <div className="flex flex-col gap-3 mt-2 text-white font-sans w-full">
@@ -78,28 +60,31 @@ export default function ServerSelector({ servers, audioType, setAudioType, curre
         {/* Area Tombol & Dropdown Kustom */}
         <div className="flex flex-wrap justify-center items-center gap-3 shrink-0 w-full md:w-auto" ref={dropdownContainerRef}>
           
-          {/* SUB DROPDOWN */}
+          {/* AUDIO DROPDOWN (KIRI) */}
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[12px] font-bold uppercase text-white">SUB</span>
+            <span className="text-[12px] font-bold uppercase text-white">AUDIO</span>
             <div className="relative shrink-0 z-[30]">
               <button 
-                onClick={() => setOpenDropdown(openDropdown === 'sub' ? null : 'sub')}
+                onClick={() => setOpenDropdown(openDropdown === 'audio' ? null : 'audio')}
                 className="flex items-center gap-2 h-8 bg-[#0F0F0F] border border-[#2A2A2E] hover:border-[#3A3A3E] hover:bg-[#161616] transition-all px-3 rounded-[8px] text-[13px] font-medium text-slate-200 w-[110px] justify-between"
               >
-                <span className="truncate">{activeSubLabel}</span>
-                <ChevronDown className={`shrink-0 w-3.5 h-3.5 text-[#8C8C8C] transition-transform ${openDropdown === 'sub' ? 'rotate-180' : ''}`} />
+                <span className="truncate">{capitalize(audioType)}</span>
+                <ChevronDown className={`shrink-0 w-3.5 h-3.5 text-[#8C8C8C] transition-transform ${openDropdown === 'audio' ? 'rotate-180' : ''}`} />
               </button>
 
-              {openDropdown === 'sub' && (
+              {openDropdown === 'audio' && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 md:right-auto mt-1 w-[130px] md:w-full bg-[#0F0F0F] border border-[#2A2A2E] rounded-[8px] shadow-2xl overflow-hidden z-[40]">
-                  {subServers.length > 0 ? (
-                    subServers.map((srv: any) => (
+                  {availableAudioTypes.length > 0 ? (
+                    availableAudioTypes.map((type) => (
                       <button
-                        key={srv.data_id}
-                        onClick={() => handleServerChange('sub', srv.serverName)}
-                        className={`w-full text-left px-3 py-2 text-[12px] font-medium hover:bg-[#161616] transition-colors ${audioType === 'sub' && currentServer.toLowerCase() === srv.serverName.toLowerCase() ? 'text-white bg-[#161616]' : 'text-slate-300'}`}
+                        key={type}
+                        onClick={() => {
+                          setAudioType(type);
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-[12px] font-medium hover:bg-[#161616] transition-colors ${audioType === type ? 'text-white bg-[#161616]' : 'text-slate-300'}`}
                       >
-                        {srv.serverName}
+                        {capitalize(type)}
                       </button>
                     ))
                   ) : (
@@ -107,7 +92,7 @@ export default function ServerSelector({ servers, audioType, setAudioType, curre
                       onClick={() => setOpenDropdown(null)}
                       className="w-full text-left px-3 py-2 text-[12px] font-medium text-slate-500 cursor-not-allowed"
                     >
-                      No Sub
+                      No Audio
                     </button>
                   )}
                 </div>
@@ -115,28 +100,31 @@ export default function ServerSelector({ servers, audioType, setAudioType, curre
             </div>
           </div>
 
-          {/* DUB DROPDOWN */}
+          {/* PROVIDER DROPDOWN (KANAN) */}
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[12px] font-bold uppercase text-white">DUB</span>
+            <span className="text-[12px] font-bold uppercase text-white">SERVER</span>
             <div className="relative shrink-0 z-[30]">
               <button 
-                onClick={() => setOpenDropdown(openDropdown === 'dub' ? null : 'dub')}
+                onClick={() => setOpenDropdown(openDropdown === 'provider' ? null : 'provider')}
                 className="flex items-center gap-2 h-8 bg-[#0F0F0F] border border-[#2A2A2E] hover:border-[#3A3A3E] hover:bg-[#161616] transition-all px-3 rounded-[8px] text-[13px] font-medium text-slate-200 w-[110px] justify-between"
               >
-                <span className="truncate">{activeDubLabel}</span>
-                <ChevronDown className={`shrink-0 w-3.5 h-3.5 text-[#8C8C8C] transition-transform ${openDropdown === 'dub' ? 'rotate-180' : ''}`} />
+                <span className="truncate">{capitalize(currentProvider)}</span>
+                <ChevronDown className={`shrink-0 w-3.5 h-3.5 text-[#8C8C8C] transition-transform ${openDropdown === 'provider' ? 'rotate-180' : ''}`} />
               </button>
 
-              {openDropdown === 'dub' && (
+              {openDropdown === 'provider' && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 md:right-auto mt-1 w-[130px] md:w-full bg-[#0F0F0F] border border-[#2A2A2E] rounded-[8px] shadow-2xl overflow-hidden z-[40]">
-                  {dubServers.length > 0 ? (
-                    dubServers.map((srv: any) => (
+                  {providersList && providersList.length > 0 ? (
+                    providersList.map((prov: string) => (
                       <button
-                        key={srv.data_id}
-                        onClick={() => handleServerChange('dub', srv.serverName)}
-                        className={`w-full text-left px-3 py-2 text-[12px] font-medium hover:bg-[#161616] transition-colors ${audioType === 'dub' && currentServer.toLowerCase() === srv.serverName.toLowerCase() ? 'text-white bg-[#161616]' : 'text-slate-300'}`}
+                        key={prov}
+                        onClick={() => {
+                          setCurrentProvider(prov);
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-[12px] font-medium hover:bg-[#161616] transition-colors ${currentProvider === prov ? 'text-white bg-[#161616]' : 'text-slate-300'}`}
                       >
-                        {srv.serverName}
+                        {capitalize(prov)}
                       </button>
                     ))
                   ) : (
@@ -144,7 +132,7 @@ export default function ServerSelector({ servers, audioType, setAudioType, curre
                       onClick={() => setOpenDropdown(null)}
                       className="w-full text-left px-3 py-2 text-[12px] font-medium text-slate-500 cursor-not-allowed hover:bg-[#161616] transition-colors"
                     >
-                      Any
+                      Empty
                     </button>
                   )}
                 </div>

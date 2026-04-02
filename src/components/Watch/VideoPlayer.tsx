@@ -16,7 +16,7 @@ interface VideoPlayerProps {
   autoSkip?: boolean;
   autoNext?: boolean;
   onNextEpisode?: () => void;
-  activePlayer: string; // Menerima state player dari parent
+  activePlayer: string; 
 }
 
 export default function VideoPlayer({ 
@@ -38,13 +38,18 @@ export default function VideoPlayer({
   const hasSkippedIntroRef = useRef(false);
   const hasTriggeredNextRef = useRef(false);
 
-  const m3u8Url = streamData?.streamingLink?.link?.file;
-  const proxyUrl = m3u8Url ? `https://stream.animeparadise.moe/m3u8?url=${m3u8Url}` : '';
-  const iframeUrl = streamData?.streamingLink?.iframe;
-  const tracks = streamData?.streamingLink?.tracks || [];
+  // MENGAMBIL DATA DARI MAPLEWATCH API
+  const hlsStream = streamData?.streams?.find((s: any) => s.type === 'hls');
+  const embedStream = streamData?.streams?.find((s: any) => s.type === 'embed');
+
+  const m3u8Url = hlsStream?.url;
+  // MENAMBAHKAN PROXY CORS CLOUDFLARE MILIK ANIMAPLE
+  const proxyUrl = m3u8Url ? `https://proxy.animaplexyz.workers.dev/${m3u8Url}` : '';
+  const iframeUrl = embedStream?.url;
   
-  const intro = streamData?.streamingLink?.intro;
-  const outro = streamData?.streamingLink?.outro;
+  const tracks = streamData?.subtitles || [];
+  const intro = streamData?.intro;
+  const outro = streamData?.outro;
 
   useEffect(() => {
     hasSkippedIntroRef.current = false;
@@ -62,8 +67,7 @@ export default function VideoPlayer({
       url: proxyUrl,
       type: 'm3u8',
       theme: '#ffbaba', 
-      // Baris "title" dihapus di sini agar Vercel (TypeScript) tidak error
-      poster: episodeData?.thumbnail || '',
+      poster: episodeData?.thumbnail || episodeData?.image || '',
       volume: 1,
       pip: true,
       autoplay: autoPlay,
@@ -233,7 +237,7 @@ export default function VideoPlayer({
             
             {activePlayer === 'plyr' && proxyUrl && (
               <div className="absolute inset-0 w-full h-full outline-none z-10 bg-black">
-                <video ref={plyrRef} crossOrigin="anonymous" playsInline poster={episodeData?.thumbnail || ''} className="w-full h-full">
+                <video ref={plyrRef} crossOrigin="anonymous" playsInline poster={episodeData?.thumbnail || episodeData?.image || ''} className="w-full h-full">
                   {tracks.map((track: any, idx: number) => (
                     track.kind === "captions" && (
                       <track key={idx} kind="captions" label={track.label} srcLang={track.label.substring(0,2).toLowerCase()} src={track.file} default={track.default} />
@@ -247,7 +251,7 @@ export default function VideoPlayer({
               <div ref={vjsRef} className="absolute inset-0 w-full h-full outline-none z-10 bg-black [&>div]:w-full [&>div]:h-full" />
             )}
 
-            {/* IFRAME INTEGRATION */}
+            {/* IFRAME INTEGRATION (JIKA HLS MATI) */}
             {activePlayer === 'iframe' && iframeUrl && (
               <iframe 
                 src={iframeUrl} 
@@ -260,7 +264,7 @@ export default function VideoPlayer({
             {/* Fallback jika URL untuk player yang dipilih tidak ada */}
             {activePlayer !== 'iframe' && !proxyUrl && iframeUrl && (
                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0A0B] text-[#8C8C8C] text-sm text-center px-4 z-50">
-                 <p className="mb-2">HLS Stream is currently unavailable.</p>
+                 <p className="mb-2">HLS Stream is currently unavailable. Switch Player to Iframe</p>
                </div>
             )}
           </>

@@ -26,12 +26,13 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [currentEp, setCurrentEp] = useState<string | null>(initialEp);
   
+  // STATE BARU UNTUK MAPLEWATCH
+  const [mwData, setMwData] = useState<any>(null);
+  const [currentProvider, setCurrentProvider] = useState<string>('zoro'); // Default
+  const [audioType, setAudioType] = useState<'sub' | 'dub'>('sub');
+  
   const [streamData, setStreamData] = useState<any>(null);
   const [loadingStream, setLoadingStream] = useState(false);
-  
-  const [servers, setServers] = useState<any[]>([]);
-  const [audioType, setAudioType] = useState<'sub' | 'dub'>('sub');
-  const [currentServer, setCurrentServer] = useState<string>('hd-1');
 
   // STATE UNTUK KONTROL PLAYER
   const [autoPlay, setAutoPlay] = useState(false);
@@ -91,7 +92,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         if (json.success) {
           let bowoEpisodes = json.results.episodes;
           
-          // Set awal agar UI cepat muncul menggunakan data dasar bowo
           setEpisodes(bowoEpisodes);
           
           if (!initialEp && bowoEpisodes.length > 0) {
@@ -99,42 +99,28 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
             setCurrentEp(firstEp);
           }
 
-          // === TRIK VIERA: CARI ANILIST ID DARI SLUG ===
-          try {
-            // 1. Membersihkan slug menjadi judul pencarian 
-            // Cth: "frieren-beyond-journeys-end-season-2-20409" -> "frieren beyond journeys end season 2"
-            const searchQuery = slug.replace(/-\d+$/, '').replace(/-/g, ' ');
+          const anilistId = json.results.anilist_id;
 
-            // 2. Tembak GraphQL API publik AniList untuk mencari ID-nya
-            const aniListRes = await fetch('https://graphql.anilist.co', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
-              body: JSON.stringify({
-                query: `query ($search: String) { Media (search: $search, type: ANIME) { id } }`,
-                variables: { search: searchQuery }
-              })
-            });
-            
-            const aniListData = await aniListRes.json();
-            const anilistId = aniListData?.data?.Media?.id;
-
-            // 3. Jika AniList ID berhasil didapatkan, lakukan fetch ke maplewatch
-            if (anilistId) {
+          if (anilistId) {
+            try {
               const mwRes = await fetch(`https://maplewatch.vercel.app/episodes/${anilistId}`);
               
               if (mwRes.ok) {
                 const mwJson = await mwRes.json();
                 
-                // Mencari provider yang memiliki data episode
-                const mwEpisodesList = mwJson.providers?.zoro?.episodes?.sub || 
-                                       mwJson.providers?.kiwi?.episodes?.sub || 
-                                       mwJson.providers?.bee?.episodes?.sub || [];
+                // Simpan raw data dari maplewatch untuk digunakan ServerSelector & VideoPlayer
+                setMwData(mwJson.providers);
+                
+                // Pilih provider default yang tersedia
+                const availableProviders = Object.keys(mwJson.providers || {}).filter(k => 
+                  mwJson.providers[k]?.episodes?.sub?.length > 0 || mwJson.providers[k]?.episodes?.dub?.length > 0
+                );
+                const defaultProv = availableProviders.includes('zoro') ? 'zoro' : (availableProviders[0] || 'zoro');
+                setCurrentProvider(defaultProv);
+
+                const mwEpisodesList = mwJson.providers?.[defaultProv]?.episodes?.sub || mwJson.providers?.[defaultProv]?.episodes?.dub || [];
                 
                 if (mwEpisodesList.length > 0) {
-                  // Merge data image & description ke data bowo
                   const mergedEpisodes = bowoEpisodes.map((ep: any) => {
                     const mwMatch = mwEpisodesList.find((m: any) => m.number === ep.episode_no);
                     return {
@@ -143,14 +129,12 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
                       description: mwMatch?.description || ep.description
                     };
                   });
-                  
-                  // Update state dengan data yang sudah di-merge dan punya thumbnail
                   setEpisodes(mergedEpisodes);
                 }
               }
+            } catch (mwError) {
+              console.error("Gagal melakukan sinkronisasi dengan Maplewatch", mwError);
             }
-          } catch (mwError) {
-            console.error("Gagal melakukan sinkronisasi AniList/Maplewatch", mwError);
           }
         }
       } catch (error) {
@@ -164,20 +148,25 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   }, [slug, initialEp]);
 
   useEffect(() => {
-    if (!currentEp) return;
+    if (!currentEp || !mwData || !currentProvider) return;
 
     const fetchStreamData = async () => {
       setLoadingStream(true);
       try {
-        const streamUrl = `https://bowotheexplorer.vercel.app/api/stream?id=${slug}?ep=${currentEp}&server=${currentServer}&type=${audioType}`;
-        const res = await fetch(streamUrl);
-        const json = await res.json();
+        const currentEpDataLocal = episodes.find(e => e.id.includes(currentEp || ''));
+        const epNumber = currentEpDataLocal?.episode_no;
+        
+        // Cari id spesifik maplewatch (contoh: watch/zoro/182255/sub/zoro-1)
+        const maplewatchEp = mwData[currentProvider]?.episodes[audioType]?.find((e: any) => e.number === epNumber);
 
-        if (json.success) {
-          setStreamData(json.results);
-          if (json.results.servers) {
-             setServers(json.results.servers);
-          }
+        if (maplewatchEp && maplewatchEp.id) {
+          const streamUrl = `https://maplewatch.vercel.app/${maplewatchEp.id}`;
+          const res = await fetch(streamUrl);
+          const json = await res.json();
+
+          // Maplewatch membalas dengan key dinamis ssub/sdub, ambil object pertama
+          const streamObj = Object.values(json)[0];
+          setStreamData(streamObj);
         } else {
           setStreamData(null);
         }
@@ -190,7 +179,7 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
     };
 
     fetchStreamData();
-  }, [slug, currentEp, currentServer, audioType]);
+  }, [currentEp, currentProvider, audioType, mwData, episodes]);
 
   const handleEpisodeChange = (epId: string) => {
     setCurrentEp(epId);
@@ -210,10 +199,9 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   const currentEpData = episodes.find(e => e.id.includes(currentEp || ''));
 
   return (
-    // FITUR DIPERBAIKI: Menggunakan grid-cols-10 agar gap-3 tidak membuat elemen meluber melebihi 100% width
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-10 gap-3">
       
-      {/* KOLOM KIRI ATAS (Breadcrumb, Video, Controls) - Baris 1 Desktop */}
+      {/* KOLOM KIRI ATAS (Breadcrumb, Video, Controls) */}
       <div className="flex flex-col gap-2 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-1">
         <WatchBreadcrumb 
           episodeData={currentEpData} 
@@ -246,14 +234,15 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         />
       </div>
 
-      {/* KOLOM KIRI BAWAH (Server, Ads, Info) - Baris 2 Desktop */}
+      {/* KOLOM KIRI BAWAH (Server, Ads, Info) */}
       <div className="flex flex-col gap-1 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-2 -mt-2">
         <ServerSelector 
-          servers={servers} 
+          mwData={mwData}
+          providersList={Object.keys(mwData || {}).filter(k => mwData[k]?.episodes?.sub?.length > 0 || mwData[k]?.episodes?.dub?.length > 0)}
+          currentProvider={currentProvider}
+          setCurrentProvider={setCurrentProvider}
           audioType={audioType}
           setAudioType={setAudioType}
-          currentServer={currentServer}
-          setCurrentServer={setCurrentServer}
           currentEpisodeNumber={currentEpData?.episode_no}
           episodeData={currentEpData} 
         />
@@ -271,9 +260,8 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         </div>
       </div>
 
-      {/* KOLOM KANAN - EPISODE LIST (3 PORSI DI DESKTOP) - Baris 1 Desktop */}
+      {/* KOLOM KANAN - EPISODE LIST */}
       <div className="flex flex-col lg:col-span-3 min-w-0 lg:col-start-8 lg:row-start-1 relative">
-        {/* Trik absolute di desktop untuk meluruskan tinggi */}
         <div className="w-full lg:absolute lg:inset-0">
           <EpisodeList 
             episodes={episodes} 
