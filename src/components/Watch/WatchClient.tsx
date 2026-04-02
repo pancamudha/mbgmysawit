@@ -87,11 +87,70 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
       try {
         const res = await fetch(`https://bowotheexplorer.vercel.app/api/episodes/${slug}`);
         const json = await res.json();
+        
         if (json.success) {
-          setEpisodes(json.results.episodes);
-          if (!initialEp && json.results.episodes.length > 0) {
-            const firstEp = json.results.episodes[0].id.split('?ep=')[1];
+          let bowoEpisodes = json.results.episodes;
+          
+          // Set awal agar UI cepat muncul menggunakan data dasar bowo
+          setEpisodes(bowoEpisodes);
+          
+          if (!initialEp && bowoEpisodes.length > 0) {
+            const firstEp = bowoEpisodes[0].id.split('?ep=')[1];
             setCurrentEp(firstEp);
+          }
+
+          // === TRIK VIERA: CARI ANILIST ID DARI SLUG ===
+          try {
+            // 1. Membersihkan slug menjadi judul pencarian 
+            // Cth: "frieren-beyond-journeys-end-season-2-20409" -> "frieren beyond journeys end season 2"
+            const searchQuery = slug.replace(/-\d+$/, '').replace(/-/g, ' ');
+
+            // 2. Tembak GraphQL API publik AniList untuk mencari ID-nya
+            const aniListRes = await fetch('https://graphql.anilist.co', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({
+                query: `query ($search: String) { Media (search: $search, type: ANIME) { id } }`,
+                variables: { search: searchQuery }
+              })
+            });
+            
+            const aniListData = await aniListRes.json();
+            const anilistId = aniListData?.data?.Media?.id;
+
+            // 3. Jika AniList ID berhasil didapatkan, lakukan fetch ke maplewatch
+            if (anilistId) {
+              const mwRes = await fetch(`https://maplewatch.vercel.app/episodes/${anilistId}`);
+              
+              if (mwRes.ok) {
+                const mwJson = await mwRes.json();
+                
+                // Mencari provider yang memiliki data episode
+                const mwEpisodesList = mwJson.providers?.zoro?.episodes?.sub || 
+                                       mwJson.providers?.kiwi?.episodes?.sub || 
+                                       mwJson.providers?.bee?.episodes?.sub || [];
+                
+                if (mwEpisodesList.length > 0) {
+                  // Merge data image & description ke data bowo
+                  const mergedEpisodes = bowoEpisodes.map((ep: any) => {
+                    const mwMatch = mwEpisodesList.find((m: any) => m.number === ep.episode_no);
+                    return {
+                      ...ep,
+                      image: mwMatch?.image || ep.image,
+                      description: mwMatch?.description || ep.description
+                    };
+                  });
+                  
+                  // Update state dengan data yang sudah di-merge dan punya thumbnail
+                  setEpisodes(mergedEpisodes);
+                }
+              }
+            }
+          } catch (mwError) {
+            console.error("Gagal melakukan sinkronisasi AniList/Maplewatch", mwError);
           }
         }
       } catch (error) {
@@ -100,6 +159,7 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         setLoadingInitial(false);
       }
     };
+    
     fetchEpisodes();
   }, [slug, initialEp]);
 

@@ -6,8 +6,23 @@ import { useAnimeTitle } from '@/context/TitleLanguageContext';
 export default function ServerSelector({ servers, audioType, setAudioType, currentServer, setCurrentServer, currentEpisodeNumber, episodeData }: any) {
   const { getTitle } = useAnimeTitle(); // Memanggil Hook Bahasa
 
-  const subServers = servers?.filter((s: any) => s.type === 'sub') || [];
-  const dubServers = servers?.filter((s: any) => s.type === 'dub') || [];
+  // MENDETEKSI APAKAH DATA MENGGUNAKAN FORMAT BARU (MAPLEWATCH)
+  const isNewFormat = servers?.some((s: any) => s.server !== undefined && (s.type === 'hls' || s.type === 'embed'));
+
+  let subServers: any[] = [];
+  let dubServers: any[] = [];
+
+  if (isNewFormat) {
+    // Mengekstrak nama server yang unik dari array streams Maplewatch
+    const uniqueServers = Array.from(new Set(servers.map((s: any) => s.server)));
+    const mapped = uniqueServers.map((name: any) => ({ serverName: name, data_id: name }));
+    subServers = mapped;
+    dubServers = mapped;
+  } else {
+    // Fallback format lama (Bowo)
+    subServers = servers?.filter((s: any) => s.type === 'sub') || [];
+    dubServers = servers?.filter((s: any) => s.type === 'dub') || [];
+  }
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownContainerRef = useRef<HTMLDivElement>(null);
@@ -49,7 +64,6 @@ export default function ServerSelector({ servers, audioType, setAudioType, curre
         
         {/* Info Episode */}
         <div className="flex flex-col min-w-0 flex-1 items-center text-center md:items-start md:text-left w-full md:pr-4">
-          {/* HU TAO UDAH BALIKIN JADI text-2xl DI SINI! 🔥 */}
           <h1 
             className="text-2xl font-bold tracking-tight w-full md:truncate" 
             title={`Episode ${displayEpisodeNo}: ${displayTitle}`}

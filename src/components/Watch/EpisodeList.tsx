@@ -215,9 +215,9 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                     }`}
                   >
                     <div className="relative w-[130px] lg:w-[145px] shrink-0 h-[85px] lg:h-[95px] bg-[#141414] border-r border-[#2A2A2E] flex items-center justify-center overflow-hidden rounded-[10px]">
-                      {ep.thumbnail ? (
+                      {ep.image || ep.thumbnail ? (
                         <img 
-                          src={ep.thumbnail} 
+                          src={ep.image || ep.thumbnail} 
                           alt={displayTitle}
                           className={`w-full h-full object-cover transition-all ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}
                         />
