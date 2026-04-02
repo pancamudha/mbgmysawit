@@ -1,7 +1,7 @@
 import { LayoutGrid } from "lucide-react";
-import ExploreFilterBar from "@/components/Explore/ExploreFilterBar";
-import ExplorePagination from "@/components/Explore/ExplorePagination";
+import AZListPagination from "@/components/AZ-List/AZListPagination";
 import { AnimeCardClient } from "@/components/Explore/AnimeCardClient";
+import AZFilterBar from "@/components/AZ-List/AZFilterBar";
 
 export const dynamic = "force-dynamic";
 
@@ -22,97 +22,63 @@ interface AnimeItem {
 }
 
 export const metadata = {
-  title: "Explore - Animaple",
-  description: "Search and filter your favorite anime",
+  title: "A-Z List - Animaple",
+  description: "Browse anime alphabetically from A to Z",
 };
 
-const FORMAT_MAP: Record<string, string> = {
-  "movie": "1", "tv": "2", "ova": "3", "ona": "4", "special": "5", "music": "6"
-};
-
-const GENRE_MAP: Record<string, string> = {
-  "action": "1", "adventure": "2", "cars": "3", "comedy": "4", "dementia": "5", "demons": "6",
-  "mystery": "7", "drama": "8", "ecchi": "9", "fantasy": "10", "game": "11", "historical": "13",
-  "horror": "14", "kids": "15", "magic": "16", "martial-arts": "17", "mecha": "18", "music": "19",
-  "parody": "20", "samurai": "21", "romance": "22", "school": "23", "sci-fi": "24", "shoujo": "25",
-  "shoujo-ai": "26", "shounen": "27", "shounen-ai": "28", "space": "29", "sports": "30",
-  "super-power": "31", "vampire": "32", "harem": "35", "slice-of-life": "36", "supernatural": "37",
-  "military": "38", "police": "39", "psychological": "40", "thriller": "41", "seinen": "42",
-  "josei": "43", "isekai": "44"
-};
-
-const STATUS_MAP: Record<string, string> = {
-  "finished": "1", "currently-airing": "2", "not-yet-aired": "3"
-};
-
-export default async function ExplorePage({
+export default async function AZListPage({
   params,
-  searchParams,
 }: {
-  params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: Promise<{ letter?: string[] }>;
 }) {
   const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
-  
-  const slug = resolvedParams.slug || [];
+  const letterArray = resolvedParams.letter || [];
 
-  // SMART PARSER: Mencari parameter berdasarkan kamus data tanpa mempedulikan urutannya di URL
-  const formatParam = slug.find(s => Object.keys(FORMAT_MAP).includes(s.toLowerCase()));
-  const genreParam = slug.find(s => Object.keys(GENRE_MAP).includes(s.toLowerCase()));
-  const statusParam = slug.find(s => Object.keys(STATUS_MAP).includes(s.toLowerCase()));
-  const yearParam = slug.find(s => /^\d{4}$/.test(s)); // Mencari angka 4 digit
-  
-  const pageIndex = slug.indexOf('page');
-  const page = pageIndex !== -1 && slug[pageIndex + 1] ? parseInt(slug[pageIndex + 1]) : 1;
+  let currentLetter = "all";
+  let page = 1;
 
-  const queryParam = typeof resolvedSearchParams.query === 'string' ? resolvedSearchParams.query : undefined;
+  // Bedah struktur URL (contoh isinya: ['A', 'page', '2'] atau ['page', '2'])
+  if (letterArray.length > 0) {
+    if (letterArray[0] === 'page') {
+      // Kondisi URL: /az-list/page/2
+      page = parseInt(letterArray[1]) || 1;
+    } else {
+      // Kondisi URL: /az-list/A atau /az-list/A/page/2
+      currentLetter = letterArray[0];
+      if (letterArray[1] === 'page') {
+        page = parseInt(letterArray[2]) || 1;
+      }
+    }
+  }
 
   let animeList: AnimeItem[] = [];
-  let totalPages = 200;
+  let totalPages = 1;
 
   const baseUrl = process.env.API_BASE_URL || 'https://bowotheexplorer.vercel.app';
   const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
   const secretKey = process.env.ANIMAPLE_SECRET_KEY || '';
 
   try {
-    if (queryParam) {
-      const res = await fetch(`${apiUrl}/search?keyword=${encodeURIComponent(queryParam)}&page=${page}`, { 
-        cache: 'no-store',
-        headers: { 'x-animaple-key': secretKey }
-      });
-      const json = await res.json();
-      animeList = json?.results?.data || json?.data || [];
-      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 1;
-    } else {
-      const queryParams = new URLSearchParams();
-      
-      if (formatParam) queryParams.append("type", FORMAT_MAP[formatParam.toLowerCase()]);
-      if (genreParam) queryParams.append("genres", GENRE_MAP[genreParam.toLowerCase()]);
-      if (statusParam) queryParams.append("status", STATUS_MAP[statusParam.toLowerCase()]);
-      
-      if (yearParam) {
-        queryParams.append("sy", yearParam);
-        queryParams.append("sm", "1");
-        queryParams.append("sd", "1");
-        queryParams.append("ey", yearParam); 
-        queryParams.append("em", "12");
-        queryParams.append("ed", "31");
-      }
-      
-      queryParams.append("page", page.toString());
+    // API dipanggil menggunakan huruf kecil (toLowerCase) agar aman
+    const apiLetter = currentLetter === "all" ? "" : currentLetter.toLowerCase();
+    
+    const endpoint = currentLetter === "all" 
+      ? `${apiUrl}/az-list?page=${page}` 
+      : `${apiUrl}/az-list/${apiLetter}?page=${page}`;
 
-      const res = await fetch(`${apiUrl}/filter?${queryParams.toString()}`, { 
-        cache: 'no-store',
-        headers: { 'x-animaple-key': secretKey }
-      });
-      const json = await res.json();
-      
-      animeList = json?.results?.data || json?.data || [];
-      totalPages = Number(json?.results?.totalPage || json?.totalPage) || 200;
+    const res = await fetch(endpoint, { 
+      cache: 'no-store',
+      headers: { 'x-animaple-key': secretKey }
+    });
+    
+    const json = await res.json();
+    
+    if (json.success) {
+      animeList = json.results?.data || [];
+      totalPages = Number(json.results?.totalPages) || 1;
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("Error fetching AZ list data:", error);
   }
   
   const currentYear = new Date().getFullYear();
@@ -121,16 +87,7 @@ export default async function ExplorePage({
     <div className="min-h-screen bg-[#0A0A0A] text-white px-4 md:px-8 pb-5 md:pb-6 pt-[6px] md:pt-[10px]">
       <div className="max-w-[1600px] mx-auto">
         
-        <ExploreFilterBar />
-
-        {queryParam && (
-          <div className="flex items-center gap-4 mb-6 sm:mb-8 w-full mt-2">
-            <h2 className="text-[12px] sm:text-[14px] font-semibold tracking-[0.1em] text-[#8C8C8C] whitespace-nowrap uppercase">
-              SEARCH RESULT FOR <span className="text-white ml-1">"{queryParam}"</span>
-            </h2>
-            <div className="h-[1px] flex-1 bg-gradient-to-r from-[#2A2A2E] to-transparent"></div>
-          </div>
-        )}
+        <AZFilterBar />
 
         {animeList.length > 0 ? (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-5">
@@ -138,21 +95,23 @@ export default async function ExplorePage({
               <AnimeCardClient 
                 key={`${anime.id}-${index}`} 
                 anime={anime} 
-                fallbackYear={yearParam || currentYear.toString()} 
+                fallbackYear={currentYear.toString()} 
               />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[50vh] text-gray-400">
+          <div className="flex flex-col items-center justify-center h-[50vh] text-[#8C8C8C]">
             <LayoutGrid className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg">No anime found.</p>
+            <p className="text-lg font-medium">No anime found in this category.</p>
           </div>
         )}
 
+        {/* Kirim currentLetter ke Pagination agar dia tahu kita sedang di kategori apa */}
         {animeList.length > 0 && (
-          <ExplorePagination 
+          <AZListPagination 
             currentPage={page} 
             totalPages={totalPages} 
+            currentLetter={currentLetter}
           />
         )}
       </div>
