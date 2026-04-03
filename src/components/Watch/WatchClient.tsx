@@ -118,6 +118,11 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
                 const defaultProv = availableProviders.includes('zoro') ? 'zoro' : (availableProviders[0] || 'zoro');
                 setCurrentProvider(defaultProv);
 
+                // DITAMBAHKAN: Atur audio default dengan cerdas jika server tidak punya 'sub'
+                const hasSub = mwJson.providers[defaultProv]?.episodes?.sub?.length > 0;
+                const hasDub = mwJson.providers[defaultProv]?.episodes?.dub?.length > 0;
+                setAudioType(hasSub ? 'sub' : (hasDub ? 'dub' : 'sub'));
+
                 const mwEpisodesList = mwJson.providers?.[defaultProv]?.episodes?.sub || mwJson.providers?.[defaultProv]?.episodes?.dub || [];
                 
                 if (mwEpisodesList.length > 0) {
@@ -218,6 +223,7 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
           autoNext={autoNext}
           onNextEpisode={handleNextEpisode}
           activePlayer={activePlayer} 
+          currentProvider={currentProvider} // DITAMBAHKAN: Mengoper status provider saat ini
         />
         
         <WatchControls 

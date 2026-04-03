@@ -17,6 +17,7 @@ interface VideoPlayerProps {
   autoNext?: boolean;
   onNextEpisode?: () => void;
   activePlayer: string; 
+  currentProvider?: string; // DITAMBAHKAN: Untuk mengetahui server apa yang sedang aktif
 }
 
 export default function VideoPlayer({ 
@@ -27,7 +28,8 @@ export default function VideoPlayer({
   autoSkip, 
   autoNext, 
   onNextEpisode,
-  activePlayer 
+  activePlayer,
+  currentProvider 
 }: VideoPlayerProps) {
   
   const artRef = useRef<HTMLDivElement>(null);
@@ -43,8 +45,9 @@ export default function VideoPlayer({
   const embedStream = streamData?.streams?.find((s: any) => s.type === 'embed');
 
   const m3u8Url = hlsStream?.url;
-  // MENAMBAHKAN PROXY CORS CLOUDFLARE MILIK ANIMAPLE
-  const proxyUrl = m3u8Url ? `https://proxy.animaplexyz.workers.dev/${m3u8Url}` : '';
+  
+  const proxyUrl = m3u8Url ? `https://cdn.4animo.xyz/api/proxy?url=${encodeURIComponent(m3u8Url)}` : '';
+    
   const iframeUrl = embedStream?.url;
   
   const tracks = streamData?.subtitles || [];
@@ -118,7 +121,7 @@ export default function VideoPlayer({
     });
 
     return () => { if (art && art.destroy) art.destroy(false); };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, episodeData, tracks]);
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, episodeData, tracks, streamData]); // DITAMBAHKAN streamData
 
   // ==========================================
   // 2. PLYR INTEGRATION
@@ -170,7 +173,7 @@ export default function VideoPlayer({
       if (hls) hls.destroy();
       if (player) player.destroy();
     };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode]);
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]); // DITAMBAHKAN streamData
 
   // ==========================================
   // 3. VIDEO.JS INTEGRATION
@@ -221,7 +224,7 @@ export default function VideoPlayer({
         vjsPlayerRef.current = null;
       }
     };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode]);
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]); // DITAMBAHKAN streamData
 
   return (
     <div className="w-full flex flex-col gap-0 min-w-0">

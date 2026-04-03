@@ -53,7 +53,7 @@ export default function ServerSelector({
             Episode {displayEpisodeNo}: {displayTitle}
           </h1>
           <p className="text-[#8C8C8C] text-[12px] font-medium w-full mt-0.5 md:truncate">
-            If current server doesn't work try other servers beside.
+            If current server doesn't work try other servers beside (Zoro).
           </p>
         </div>
 
@@ -119,6 +119,16 @@ export default function ServerSelector({
                       <button
                         key={prov}
                         onClick={() => {
+                          // DITAMBAHKAN: Auto-switch audio jika provider baru tidak memiliki audio saat ini
+                          const subLen = mwData[prov]?.episodes?.sub?.length || 0;
+                          const dubLen = mwData[prov]?.episodes?.dub?.length || 0;
+                          
+                          if (audioType === 'sub' && subLen === 0 && dubLen > 0) {
+                            setAudioType('dub');
+                          } else if (audioType === 'dub' && dubLen === 0 && subLen > 0) {
+                            setAudioType('sub');
+                          }
+
                           setCurrentProvider(prov);
                           setOpenDropdown(null);
                         }}
