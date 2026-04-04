@@ -253,7 +253,8 @@ export default function VideoPlayer({
                 src={iframeUrl} 
                 className="absolute inset-0 w-full h-full border-none outline-none z-10 bg-black" 
                 allowFullScreen 
-                allow="autoplay; fullscreen" 
+                allow="autoplay; fullscreen"
+                referrerPolicy="no-referrer"
               />
             )}
             
