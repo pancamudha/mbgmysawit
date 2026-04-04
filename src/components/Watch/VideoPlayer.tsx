@@ -17,7 +17,7 @@ interface VideoPlayerProps {
   autoNext?: boolean;
   onNextEpisode?: () => void;
   activePlayer: string; 
-  currentProvider?: string; // DITAMBAHKAN: Untuk mengetahui server apa yang sedang aktif
+  currentProvider?: string;
 }
 
 export default function VideoPlayer({ 
@@ -40,16 +40,9 @@ export default function VideoPlayer({
   const hasSkippedIntroRef = useRef(false);
   const hasTriggeredNextRef = useRef(false);
 
-  // MENGAMBIL DATA DARI MAPLEWATCH API
-  const hlsStream = streamData?.streams?.find((s: any) => s.type === 'hls');
-  const embedStream = streamData?.streams?.find((s: any) => s.type === 'embed');
-
-  const m3u8Url = hlsStream?.url;
-  
-  const proxyUrl = m3u8Url ? `https://cdn.4animo.xyz/api/proxy?url=${encodeURIComponent(m3u8Url)}` : '';
-    
-  const iframeUrl = embedStream?.url;
-  
+  // PERUBAHAN: Data sekarang sudah dinormalisasi dan diurus sepenuhnya oleh StreamManager
+  const proxyUrl = streamData?.proxyUrl || '';
+  const iframeUrl = streamData?.iframeUrl || '';
   const tracks = streamData?.subtitles || [];
   const intro = streamData?.intro;
   const outro = streamData?.outro;
@@ -121,7 +114,7 @@ export default function VideoPlayer({
     });
 
     return () => { if (art && art.destroy) art.destroy(false); };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, episodeData, tracks, streamData]); // DITAMBAHKAN streamData
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, episodeData, tracks, streamData]);
 
   // ==========================================
   // 2. PLYR INTEGRATION
@@ -173,7 +166,7 @@ export default function VideoPlayer({
       if (hls) hls.destroy();
       if (player) player.destroy();
     };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]); // DITAMBAHKAN streamData
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]);
 
   // ==========================================
   // 3. VIDEO.JS INTEGRATION
@@ -224,7 +217,7 @@ export default function VideoPlayer({
         vjsPlayerRef.current = null;
       }
     };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]); // DITAMBAHKAN streamData
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]);
 
   return (
     <div className="w-full flex flex-col gap-0 min-w-0">

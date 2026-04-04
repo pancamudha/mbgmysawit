@@ -9,6 +9,8 @@ import WatchControls from './WatchControls';
 import WatchBreadcrumb from './WatchBreadcrumb';
 import LoadingScreen from '@/components/LoadingScreen';
 import AdsterraBanner from '@/components/Adsterra/AdsterraBanner';
+import { env } from '@/config/env';
+import { useStreamManager } from '@/hooks/useStreamManager';
 
 const VideoPlayer = dynamic(() => import('./VideoPlayer'), { 
   ssr: false,
@@ -22,33 +24,65 @@ const VideoPlayer = dynamic(() => import('./VideoPlayer'), {
 export default function WatchClient({ slug, initialEp }: { slug: string; initialEp: string | null }) {
   const router = useRouter();
 
+  // Core Data States
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [episodes, setEpisodes] = useState<any[]>([]);
+  const [baseEpisodes, setBaseEpisodes] = useState<any[]>([]); // Untuk menyimpan data asli dari bowo
+  const [episodes, setEpisodes] = useState<any[]>([]); // Yang dirender ke UI (sudah dimerge dengan MW)
   const [currentEp, setCurrentEp] = useState<string | null>(initialEp);
-  
-  // STATE BARU UNTUK MAPLEWATCH
-  const [mwData, setMwData] = useState<any>(null);
-  const [currentProvider, setCurrentProvider] = useState<string>('zoro'); // Default
-  const [audioType, setAudioType] = useState<'sub' | 'dub'>('sub');
-  
-  const [streamData, setStreamData] = useState<any>(null);
-  const [loadingStream, setLoadingStream] = useState(false);
+  const [anilistId, setAnilistId] = useState<number | null>(null);
 
-  // STATE UNTUK KONTROL PLAYER
+  // Player Preferences States
   const [autoPlay, setAutoPlay] = useState(false);
   const [autoSkip, setAutoSkip] = useState(false);
   const [autoNext, setAutoNext] = useState(true);
-  
-  // STATE UNTUK PEMILIHAN PLAYER (DARI BREADCRUMB KE VIDEOPLAYER)
   const [activePlayer, setActivePlayer] = useState('artplayer');
-  const [isLoadedPlayer, setIsLoadedPlayer] = useState(false);
-
-  // Flag pelindung agar localStorage tidak tertimpa saat render pertama
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // =======================================================
-  // 1. Baca pengaturan yang tersimpan HANYA SAAT MOUNTING
-  // =======================================================
+  const currentEpData = episodes.find(e => e.id.includes(currentEp || ''));
+
+  // ==========================================
+  // ORCHESTRATOR: Stream Manager Hook
+  // ==========================================
+  const { 
+    streamData, 
+    loading: loadingStream, 
+    availableServers, 
+    currentProvider, 
+    setCurrentProvider, 
+    audioType, 
+    setAudioType 
+  } = useStreamManager(anilistId, currentEpData?.id, currentEpData?.episode_no);
+
+  // ==========================================
+  // SYNC EPISODE METADATA (Gambar & Sinopsis)
+  // ==========================================
+  useEffect(() => {
+    if (baseEpisodes.length === 0 || availableServers.length === 0) return;
+
+    // Cari server Zoro (paling lengkap gambarnya) atau fallback ke server pertama
+    const serverConfig = availableServers.find(s => s.id === 'zoro') || availableServers[0];
+    
+    // Ambil list episode dari rawData (biasanya ada di properti 'sub' atau 'dub')
+    const mwEpList = serverConfig?.rawData?.episodes?.sub || serverConfig?.rawData?.episodes?.dub || [];
+
+    if (mwEpList.length > 0) {
+      const mergedEpisodes = baseEpisodes.map((ep: any) => {
+        // Cocokkan berdasarkan nomor episode
+        const mwMatch = mwEpList.find((m: any) => m.number === ep.episode_no);
+        return {
+          ...ep,
+          image: mwMatch?.image || ep.image,
+          description: mwMatch?.description || ep.description
+        };
+      });
+      setEpisodes(mergedEpisodes);
+    }
+  }, [baseEpisodes, availableServers]);
+
+
+  // ==========================================
+  // LOCAL STORAGE HYDRATION
+  // ==========================================
   useEffect(() => {
     const savedAutoPlay = localStorage.getItem('animaple_autoplay');
     const savedAutoSkip = localStorage.getItem('animaple_autoskip');
@@ -60,132 +94,50 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
     if (savedAutoNext !== null) setAutoNext(savedAutoNext === 'true');
     if (savedPlayer) setActivePlayer(savedPlayer);
     
-    // Izinkan penyimpanan setelah proses baca memori selesai
     setIsLoaded(true);
-    setIsLoadedPlayer(true);
   }, []);
 
-  // =======================================================
-  // 2. Simpan pengaturan HANYA JIKA proses baca sudah selesai
-  // =======================================================
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem('animaple_autoplay', String(autoPlay));
       localStorage.setItem('animaple_autoskip', String(autoSkip));
       localStorage.setItem('animaple_autonext', String(autoNext));
-    }
-  }, [autoPlay, autoSkip, autoNext, isLoaded]);
-
-  useEffect(() => {
-    if (isLoadedPlayer) {
       localStorage.setItem('animaple_player_type', activePlayer);
     }
-  }, [activePlayer, isLoadedPlayer]);
+  }, [autoPlay, autoSkip, autoNext, activePlayer, isLoaded]);
 
-
+  // ==========================================
+  // INITIAL DATA FETCHING
+  // ==========================================
   useEffect(() => {
-    const fetchEpisodes = async () => {
+    const fetchBaseEpisodes = async () => {
       try {
-        const res = await fetch(`https://bowotheexplorer.vercel.app/api/episodes/${slug}`);
+        const res = await fetch(`${env.api.bowo}/episodes/${slug}`);
         const json = await res.json();
         
         if (json.success) {
-          let bowoEpisodes = json.results.episodes;
-          
-          setEpisodes(bowoEpisodes);
+          const bowoEpisodes = json.results.episodes;
+          setBaseEpisodes(bowoEpisodes);
+          setEpisodes(bowoEpisodes); // Set awal sebelum dimerge
+          setAnilistId(json.results.anilist_id || null);
           
           if (!initialEp && bowoEpisodes.length > 0) {
-            const firstEp = bowoEpisodes[0].id.split('?ep=')[1];
-            setCurrentEp(firstEp);
-          }
-
-          const anilistId = json.results.anilist_id;
-
-          if (anilistId) {
-            try {
-              const mwRes = await fetch(`https://maplewatch.vercel.app/episodes/${anilistId}`);
-              
-              if (mwRes.ok) {
-                const mwJson = await mwRes.json();
-                
-                // Simpan raw data dari maplewatch untuk digunakan ServerSelector & VideoPlayer
-                setMwData(mwJson.providers);
-                
-                // Pilih provider default yang tersedia
-                const availableProviders = Object.keys(mwJson.providers || {}).filter(k => 
-                  mwJson.providers[k]?.episodes?.sub?.length > 0 || mwJson.providers[k]?.episodes?.dub?.length > 0
-                );
-                const defaultProv = availableProviders.includes('zoro') ? 'zoro' : (availableProviders[0] || 'zoro');
-                setCurrentProvider(defaultProv);
-
-                // DITAMBAHKAN: Atur audio default dengan cerdas jika server tidak punya 'sub'
-                const hasSub = mwJson.providers[defaultProv]?.episodes?.sub?.length > 0;
-                const hasDub = mwJson.providers[defaultProv]?.episodes?.dub?.length > 0;
-                setAudioType(hasSub ? 'sub' : (hasDub ? 'dub' : 'sub'));
-
-                const mwEpisodesList = mwJson.providers?.[defaultProv]?.episodes?.sub || mwJson.providers?.[defaultProv]?.episodes?.dub || [];
-                
-                if (mwEpisodesList.length > 0) {
-                  const mergedEpisodes = bowoEpisodes.map((ep: any) => {
-                    const mwMatch = mwEpisodesList.find((m: any) => m.number === ep.episode_no);
-                    return {
-                      ...ep,
-                      image: mwMatch?.image || ep.image,
-                      description: mwMatch?.description || ep.description
-                    };
-                  });
-                  setEpisodes(mergedEpisodes);
-                }
-              }
-            } catch (mwError) {
-              console.error("Gagal melakukan sinkronisasi dengan Maplewatch", mwError);
-            }
+            setCurrentEp(bowoEpisodes[0].id.split('?ep=')[1]);
           }
         }
       } catch (error) {
-        console.error("Gagal memuat episode", error);
+        console.error("[WatchClient] Failed to load episodes:", error);
       } finally {
         setLoadingInitial(false);
       }
     };
     
-    fetchEpisodes();
+    fetchBaseEpisodes();
   }, [slug, initialEp]);
 
-  useEffect(() => {
-    if (!currentEp || !mwData || !currentProvider) return;
-
-    const fetchStreamData = async () => {
-      setLoadingStream(true);
-      try {
-        const currentEpDataLocal = episodes.find(e => e.id.includes(currentEp || ''));
-        const epNumber = currentEpDataLocal?.episode_no;
-        
-        // Cari id spesifik maplewatch (contoh: watch/zoro/182255/sub/zoro-1)
-        const maplewatchEp = mwData[currentProvider]?.episodes[audioType]?.find((e: any) => e.number === epNumber);
-
-        if (maplewatchEp && maplewatchEp.id) {
-          const streamUrl = `https://maplewatch.vercel.app/${maplewatchEp.id}`;
-          const res = await fetch(streamUrl);
-          const json = await res.json();
-
-          // Maplewatch membalas dengan key dinamis ssub/sdub, ambil object pertama
-          const streamObj = Object.values(json)[0];
-          setStreamData(streamObj);
-        } else {
-          setStreamData(null);
-        }
-      } catch (error) {
-        console.error("Gagal memuat stream", error);
-        setStreamData(null);
-      } finally {
-        setLoadingStream(false);
-      }
-    };
-
-    fetchStreamData();
-  }, [currentEp, currentProvider, audioType, mwData, episodes]);
-
+  // ==========================================
+  // HANDLERS
+  // ==========================================
   const handleEpisodeChange = (epId: string) => {
     setCurrentEp(epId);
     router.push(`/watch/${slug}?ep=${epId}`, { scroll: false });
@@ -194,19 +146,15 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   const handleNextEpisode = () => {
     const currentIndex = episodes.findIndex(e => e.id.includes(currentEp || ''));
     const nextEp = episodes[currentIndex + 1];
-    if (nextEp) {
-      handleEpisodeChange(nextEp.id.split('?ep=')[1]);
-    }
+    if (nextEp) handleEpisodeChange(nextEp.id.split('?ep=')[1]);
   };
 
   if (loadingInitial) return <LoadingScreen />;
 
-  const currentEpData = episodes.find(e => e.id.includes(currentEp || ''));
-
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-10 gap-3">
       
-      {/* KOLOM KIRI ATAS (Breadcrumb, Video, Controls) */}
+      {/* LEFT COLUMN: Video & Controls */}
       <div className="flex flex-col gap-2 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-1">
         <WatchBreadcrumb 
           episodeData={currentEpData} 
@@ -223,7 +171,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
           autoNext={autoNext}
           onNextEpisode={handleNextEpisode}
           activePlayer={activePlayer} 
-          currentProvider={currentProvider} // DITAMBAHKAN: Mengoper status provider saat ini
         />
         
         <WatchControls 
@@ -240,11 +187,10 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         />
       </div>
 
-      {/* KOLOM KIRI BAWAH (Server, Ads, Info) */}
+      {/* LEFT COLUMN BOTTOM: Server Selector & Ads */}
       <div className="flex flex-col gap-1 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-2 -mt-2">
         <ServerSelector 
-          mwData={mwData}
-          providersList={Object.keys(mwData || {}).filter(k => mwData[k]?.episodes?.sub?.length > 0 || mwData[k]?.episodes?.dub?.length > 0)}
+          availableServers={availableServers}
           currentProvider={currentProvider}
           setCurrentProvider={setCurrentProvider}
           audioType={audioType}
@@ -253,20 +199,17 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
           episodeData={currentEpData} 
         />
 
-        <div className="w-full mt-2 sm:mt-2 flex justify-center items-center overflow-hidden rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] min-h-[90px] relative z-20">
+        <div className="w-full mt-2 flex justify-center items-center overflow-hidden rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] min-h-[90px]">
            <AdsterraBanner />
         </div>
 
-        {/* ANIME INFORMATION (VERSI DESKTOP) */}
         <div className="hidden lg:block mt-2 p-4 rounded-xl bg-[#0F0F0F] border border-[#2A2A2E]">
           <h2 className="text-lg font-bold mb-2 text-white">Anime Information</h2>
-          <p className="text-sm text-[#8C8C8C]">
-            Details, synopsis, and other info can be placed here.
-          </p>
+          <p className="text-sm text-[#8C8C8C]">Details, synopsis, and other info can be placed here.</p>
         </div>
       </div>
 
-      {/* KOLOM KANAN - EPISODE LIST */}
+      {/* RIGHT COLUMN: Episode List */}
       <div className="flex flex-col lg:col-span-3 min-w-0 lg:col-start-8 lg:row-start-1 relative">
         <div className="w-full lg:absolute lg:inset-0">
           <EpisodeList 
@@ -277,12 +220,10 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         </div>
       </div>
 
-      {/* ANIME INFORMATION (VERSI MOBILE) */}
+      {/* MOBILE ANIME INFORMATION */}
       <div className="block lg:hidden w-full mt-1 p-4 rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] lg:col-span-10">
         <h2 className="text-lg font-bold mb-2 text-white">Anime Information</h2>
-        <p className="text-sm text-[#8C8C8C]">
-          Details, synopsis, and other info can be placed here.
-        </p>
+        <p className="text-sm text-[#8C8C8C]">Details, synopsis, and other info can be placed here.</p>
       </div>
 
     </div>

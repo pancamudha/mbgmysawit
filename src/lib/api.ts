@@ -1,5 +1,8 @@
-const API_BASE_URL = process.env.API_BASE_URL;
-const SECRET_KEY = process.env.ANIMAPLE_SECRET_KEY;
+import { env } from '@/config/env';
+
+const API_BASE_URL = env.api.bowo;
+// Catatan: Secret key biarkan pakai process.env karena ini data sensitif (bukan URL)
+const SECRET_KEY = process.env.ANIMAPLE_SECRET_KEY || process.env.NEXT_PUBLIC_ANIMAPLE_SECRET_KEY;
 
 export async function fetchApi(endpoint: string) {
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
@@ -19,7 +22,7 @@ export async function fetchApi(endpoint: string) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Fetch API Error:", error);
+    console.error("[Fetch API] Error:", error);
     return null;
   }
 }
@@ -211,44 +214,23 @@ export interface FilterParams {
 export async function fetchFilteredAnime(params: FilterParams) {
   const queryParams = new URLSearchParams();
   
-  if (params.format) {
-    queryParams.append('type', params.format);
-  }
-  
-  if (params.genre) {
-    queryParams.append('genres', params.genre.replace(/-/g, '_'));
-  }
-  
-  if (params.status) {
-    queryParams.append('status', params.status.replace(/-/g, '_'));
-  }
-  
-  if (params.year) {
-    queryParams.append('sy', params.year);
-  }
-  
-  if (params.page) {
-    queryParams.append('page', params.page.toString());
-  }
+  if (params.format) queryParams.append('type', params.format);
+  if (params.genre) queryParams.append('genres', params.genre.replace(/-/g, '_'));
+  if (params.status) queryParams.append('status', params.status.replace(/-/g, '_'));
+  if (params.year) queryParams.append('sy', params.year);
+  if (params.page) queryParams.append('page', params.page.toString());
 
   const queryString = queryParams.toString();
+  const endpoint = `/filter${queryString ? `?${queryString}` : ''}`;
   
-  let endpoint = `/filter${queryString ? `?${queryString}` : ''}`;
-  if (!API_BASE_URL?.endsWith('/api')) {
-    endpoint = `/api${endpoint}`;
-  }
-  
+  // PERUBAHAN: Tidak perlu lagi pengecekan '/api' karena env.api.bowo sudah valid
   return await fetchApi(endpoint);
 }
 
 export async function fetchSchedule(date: string, tzOffset: number) {
-  const queryString = `date=${date}&tzOffset=${tzOffset}`;
+  const endpoint = `/schedule?date=${date}&tzOffset=${tzOffset}`;
   
-  let endpoint = `/schedule?${queryString}`;
-  if (!API_BASE_URL?.endsWith('/api')) {
-    endpoint = `/api${endpoint}`;
-  }
-  
+  // PERUBAHAN: Tidak perlu lagi pengecekan '/api' karena env.api.bowo sudah valid
   return await fetchApi(endpoint);
 }
 
@@ -271,7 +253,8 @@ export async function getPosterFromDetail(id: string) {
   }
 
   try {
-    const res = await fetch(`https://bowotheexplorer.vercel.app/api/info?id=${id}`);
+    // PERUBAHAN: Menggunakan env.api.bowo alih-alih hardcode domain Vercel
+    const res = await fetch(`${env.api.bowo}/info?id=${id}`);
     const data = await res.json();
     
     if (data && data.success && data.results && data.results.data) {

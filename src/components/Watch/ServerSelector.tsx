@@ -4,8 +4,7 @@ import { Download, Clock, ChevronDown } from 'lucide-react';
 import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 export default function ServerSelector({ 
-  mwData, 
-  providersList, 
+  availableServers = [], // DITAMBAHKAN: Menggunakan data server matang dari Manajer
   currentProvider, 
   setCurrentProvider, 
   audioType, 
@@ -21,10 +20,9 @@ export default function ServerSelector({
   const displayTitle = getTitle(episodeData?.title, episodeData?.japanese_title) || 'Loading...';
   const displayEpisodeNo = episodeData?.episode_no || currentEpisodeNumber || '?';
 
-  // Menentukan audio apa saja yang tersedia untuk provider saat ini
-  const availableAudioTypes = [];
-  if (mwData?.[currentProvider]?.episodes?.sub?.length > 0) availableAudioTypes.push('sub');
-  if (mwData?.[currentProvider]?.episodes?.dub?.length > 0) availableAudioTypes.push('dub');
+  // PERUBAHAN: Menentukan audio apa saja yang tersedia untuk provider saat ini dari data matang
+  const currentServerConfig = availableServers.find((s: any) => s.id === currentProvider);
+  const availableAudioTypes = currentServerConfig?.audios || [];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -75,7 +73,7 @@ export default function ServerSelector({
               {openDropdown === 'audio' && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 md:right-auto mt-1 w-[130px] md:w-full bg-[#0F0F0F] border border-[#2A2A2E] rounded-[8px] shadow-2xl overflow-hidden z-[40]">
                   {availableAudioTypes.length > 0 ? (
-                    availableAudioTypes.map((type) => (
+                    availableAudioTypes.map((type: string) => (
                       <button
                         key={type}
                         onClick={() => {
@@ -108,33 +106,27 @@ export default function ServerSelector({
                 onClick={() => setOpenDropdown(openDropdown === 'provider' ? null : 'provider')}
                 className="flex items-center gap-2 h-8 bg-[#0F0F0F] border border-[#2A2A2E] hover:border-[#3A3A3E] hover:bg-[#161616] transition-all px-3 rounded-[8px] text-[13px] font-medium text-slate-200 w-[110px] justify-between"
               >
-                <span className="truncate">{capitalize(currentProvider)}</span>
+                <span className="truncate">{currentServerConfig?.name || capitalize(currentProvider)}</span>
                 <ChevronDown className={`shrink-0 w-3.5 h-3.5 text-[#8C8C8C] transition-transform ${openDropdown === 'provider' ? 'rotate-180' : ''}`} />
               </button>
 
               {openDropdown === 'provider' && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 md:right-auto mt-1 w-[130px] md:w-full bg-[#0F0F0F] border border-[#2A2A2E] rounded-[8px] shadow-2xl overflow-hidden z-[40]">
-                  {providersList && providersList.length > 0 ? (
-                    providersList.map((prov: string) => (
+                  {availableServers && availableServers.length > 0 ? (
+                    availableServers.map((prov: any) => (
                       <button
-                        key={prov}
+                        key={prov.id}
                         onClick={() => {
-                          // DITAMBAHKAN: Auto-switch audio jika provider baru tidak memiliki audio saat ini
-                          const subLen = mwData[prov]?.episodes?.sub?.length || 0;
-                          const dubLen = mwData[prov]?.episodes?.dub?.length || 0;
-                          
-                          if (audioType === 'sub' && subLen === 0 && dubLen > 0) {
-                            setAudioType('dub');
-                          } else if (audioType === 'dub' && dubLen === 0 && subLen > 0) {
-                            setAudioType('sub');
+                          // PERUBAHAN: Auto-switch audio jika provider baru tidak memiliki audio saat ini
+                          if (!prov.audios.includes(audioType)) {
+                             setAudioType(prov.audios[0]);
                           }
-
-                          setCurrentProvider(prov);
+                          setCurrentProvider(prov.id);
                           setOpenDropdown(null);
                         }}
-                        className={`w-full text-left px-3 py-2 text-[12px] font-medium hover:bg-[#161616] transition-colors ${currentProvider === prov ? 'text-white bg-[#161616]' : 'text-slate-300'}`}
+                        className={`w-full text-left px-3 py-2 text-[12px] font-medium hover:bg-[#161616] transition-colors ${currentProvider === prov.id ? 'text-white bg-[#161616]' : 'text-slate-300'}`}
                       >
-                        {capitalize(prov)}
+                        {prov.name}
                       </button>
                     ))
                   ) : (
