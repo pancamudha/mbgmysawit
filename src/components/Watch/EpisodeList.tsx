@@ -73,7 +73,6 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
             <ChevronDown className={`w-4 h-4 text-[#8C8C8C] transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Menambahkan custom scrollbar pada Dropdown Menu juga agar konsisten */}
           {showDropdown && chunks.length > 0 && (
             <div className="absolute top-full left-0 mt-1 w-full bg-[#0F0F0F] border border-[#2A2A2E] rounded-[10px] shadow-2xl overflow-hidden z-[40] max-h-[278px] overflow-y-auto [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2A2E] hover:[&::-webkit-scrollbar-thumb]:bg-[#3A3A3E] [&::-webkit-scrollbar-thumb]:rounded-full">
               {chunks.map((chunk, idx) => (
@@ -134,7 +133,7 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                 return (
                   <button
                     key={ep.id || ep.episode_no}
-                    onClick={() => onSelectEpisode(epId)}
+                    onClick={() => onSelectEpisode(epId, ep.episode_no)}
                     className={`flex items-center justify-center h-[42px] rounded-lg font-bold text-[14px] transition-all border ${
                       isActive
                         ? 'bg-[#1A1A1C] border-[#4A4A4E] text-white shadow-[0_0_10px_rgba(255,255,255,0.03)]'
@@ -159,7 +158,7 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                 return (
                   <button
                     key={ep.id || ep.episode_no}
-                    onClick={() => onSelectEpisode(epId)}
+                    onClick={() => onSelectEpisode(epId, ep.episode_no)}
                     className={`group flex items-center justify-between w-full text-left px-3 py-2.5 rounded-[10px] transition-all border shrink-0 overflow-hidden ${
                       isActive 
                       ? 'bg-[#1A1A1C] border-[#4A4A4E] shadow-[0_0_10px_rgba(255,255,255,0.03)]' 
@@ -207,7 +206,7 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
                 return (
                   <button
                     key={ep.id || ep.episode_no}
-                    onClick={() => onSelectEpisode(epId)}
+                    onClick={() => onSelectEpisode(epId, ep.episode_no)}
                     className={`group flex flex-row w-full text-left rounded-[10px] transition-all border shrink-0 overflow-hidden ${
                       isActive 
                       ? 'bg-[#1A1A1C] border-[#4A4A4E] shadow-[0_0_10px_rgba(255,255,255,0.03)]' 

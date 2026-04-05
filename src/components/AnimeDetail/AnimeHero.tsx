@@ -11,7 +11,8 @@ export default function AnimeHero({ anime }: { anime: any }) {
 
   if (!anime) return null;
 
-  const firstEpisodeSlug = anime.id || '#';
+  // PERBAIKAN: Mengubah target URL agar langsung mengarah ke format Clean URL (Episode 1)
+  const firstEpisodeUrl = anime.id ? `/watch/${anime.id}/episode/1` : '#';
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
@@ -152,7 +153,7 @@ export default function AnimeHero({ anime }: { anime: any }) {
 
         {/* Tombol Aksi */}
         <div className="flex items-center flex-wrap justify-center md:justify-start gap-3 sm:gap-4 w-full">
-          <Link href={`/watch/${firstEpisodeSlug}`} className="bg-white hover:bg-slate-200 text-black font-bold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg transition-colors flex items-center justify-center gap-2 text-[13px] sm:text-sm shadow-lg shadow-white/5">
+          <Link href={firstEpisodeUrl} className="bg-white hover:bg-slate-200 text-black font-bold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg transition-colors flex items-center justify-center gap-2 text-[13px] sm:text-sm shadow-lg shadow-white/5">
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> Watch Now
           </Link>
           

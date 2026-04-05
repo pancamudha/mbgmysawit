@@ -21,14 +21,15 @@ const VideoPlayer = dynamic(() => import('./VideoPlayer'), {
   )
 });
 
-export default function WatchClient({ slug, initialEp }: { slug: string; initialEp: string | null }) {
+// PERUBAHAN: Menggunakan initialEpNumber alih-alih initialEp
+export default function WatchClient({ slug, initialEpNumber }: { slug: string; initialEpNumber: string | null }) {
   const router = useRouter();
 
   // Core Data States
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [baseEpisodes, setBaseEpisodes] = useState<any[]>([]); // Untuk menyimpan data asli dari bowo
-  const [episodes, setEpisodes] = useState<any[]>([]); // Yang dirender ke UI (sudah dimerge dengan MW)
-  const [currentEp, setCurrentEp] = useState<string | null>(initialEp);
+  const [baseEpisodes, setBaseEpisodes] = useState<any[]>([]);
+  const [episodes, setEpisodes] = useState<any[]>([]); 
+  const [currentEp, setCurrentEp] = useState<string | null>(null);
   const [anilistId, setAnilistId] = useState<number | null>(null);
 
   // Player Preferences States
@@ -59,15 +60,11 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   useEffect(() => {
     if (baseEpisodes.length === 0 || availableServers.length === 0) return;
 
-    // Cari server Zoro (paling lengkap gambarnya) atau fallback ke server pertama
     const serverConfig = availableServers.find(s => s.id === 'zoro') || availableServers[0];
-    
-    // Ambil list episode dari rawData (biasanya ada di properti 'sub' atau 'dub')
     const mwEpList = serverConfig?.rawData?.episodes?.sub || serverConfig?.rawData?.episodes?.dub || [];
 
     if (mwEpList.length > 0) {
       const mergedEpisodes = baseEpisodes.map((ep: any) => {
-        // Cocokkan berdasarkan nomor episode
         const mwMatch = mwEpList.find((m: any) => m.number === ep.episode_no);
         return {
           ...ep,
@@ -78,7 +75,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
       setEpisodes(mergedEpisodes);
     }
   }, [baseEpisodes, availableServers]);
-
 
   // ==========================================
   // LOCAL STORAGE HYDRATION
@@ -107,7 +103,7 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   }, [autoPlay, autoSkip, autoNext, activePlayer, isLoaded]);
 
   // ==========================================
-  // INITIAL DATA FETCHING
+  // INITIAL DATA FETCHING & TRANSLATOR
   // ==========================================
   useEffect(() => {
     const fetchBaseEpisodes = async () => {
@@ -118,11 +114,21 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         if (json.success) {
           const bowoEpisodes = json.results.episodes;
           setBaseEpisodes(bowoEpisodes);
-          setEpisodes(bowoEpisodes); // Set awal sebelum dimerge
+          setEpisodes(bowoEpisodes); 
           setAnilistId(json.results.anilist_id || null);
           
-          if (!initialEp && bowoEpisodes.length > 0) {
-            setCurrentEp(bowoEpisodes[0].id.split('?ep=')[1]);
+          if (bowoEpisodes.length > 0) {
+            // TRANSLATOR: Ubah episode number dari URL menjadi episode ID
+            if (initialEpNumber) {
+               const targetEp = bowoEpisodes.find((e: any) => e.episode_no.toString() === initialEpNumber.toString());
+               if (targetEp) {
+                 setCurrentEp(targetEp.id.split('?ep=')[1]);
+               } else {
+                 setCurrentEp(bowoEpisodes[0].id.split('?ep=')[1]); // Fallback jika nomor episode tidak ada
+               }
+            } else {
+               setCurrentEp(bowoEpisodes[0].id.split('?ep=')[1]);
+            }
           }
         }
       } catch (error) {
@@ -133,20 +139,21 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
     };
     
     fetchBaseEpisodes();
-  }, [slug, initialEp]);
+  }, [slug, initialEpNumber]);
 
   // ==========================================
   // HANDLERS
   // ==========================================
-  const handleEpisodeChange = (epId: string) => {
+  // PERUBAHAN: Menerima epNumber untuk ditempelkan ke URL yang baru
+  const handleEpisodeChange = (epId: string, epNumber: string | number) => {
     setCurrentEp(epId);
-    router.push(`/watch/${slug}?ep=${epId}`, { scroll: false });
+    router.push(`/watch/${slug}/episode/${epNumber}`, { scroll: false });
   };
 
   const handleNextEpisode = () => {
     const currentIndex = episodes.findIndex(e => e.id.includes(currentEp || ''));
     const nextEp = episodes[currentIndex + 1];
-    if (nextEp) handleEpisodeChange(nextEp.id.split('?ep=')[1]);
+    if (nextEp) handleEpisodeChange(nextEp.id.split('?ep=')[1], nextEp.episode_no);
   };
 
   if (loadingInitial) return <LoadingScreen />;
@@ -154,7 +161,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-10 gap-3">
       
-      {/* LEFT COLUMN: Video & Controls */}
       <div className="flex flex-col gap-2 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-1">
         <WatchBreadcrumb 
           episodeData={currentEpData} 
@@ -178,7 +184,7 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
            totalEpisodes={episodes.length}
            onPrev={() => {
               const prev = episodes[episodes.findIndex(e => e.id.includes(currentEp || '')) - 1];
-              if (prev) handleEpisodeChange(prev.id.split('?ep=')[1]);
+              if (prev) handleEpisodeChange(prev.id.split('?ep=')[1], prev.episode_no);
            }}
            onNext={handleNextEpisode}
            autoPlay={autoPlay} setAutoPlay={setAutoPlay}
@@ -187,7 +193,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         />
       </div>
 
-      {/* LEFT COLUMN BOTTOM: Server Selector & Ads */}
       <div className="flex flex-col gap-1 lg:col-span-7 min-w-0 lg:col-start-1 lg:row-start-2 -mt-2">
         <ServerSelector 
           availableServers={availableServers}
@@ -209,7 +214,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Episode List */}
       <div className="flex flex-col lg:col-span-3 min-w-0 lg:col-start-8 lg:row-start-1 relative">
         <div className="w-full lg:absolute lg:inset-0">
           <EpisodeList 
@@ -220,7 +224,6 @@ export default function WatchClient({ slug, initialEp }: { slug: string; initial
         </div>
       </div>
 
-      {/* MOBILE ANIME INFORMATION */}
       <div className="block lg:hidden w-full mt-1 p-4 rounded-xl bg-[#0F0F0F] border border-[#2A2A2E] lg:col-span-10">
         <h2 className="text-lg font-bold mb-2 text-white">Anime Information</h2>
         <p className="text-sm text-[#8C8C8C]">Details, synopsis, and other info can be placed here.</p>
