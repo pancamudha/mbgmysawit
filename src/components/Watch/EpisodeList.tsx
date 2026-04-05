@@ -4,7 +4,7 @@ import { Search, Eye, Image as ImageIcon, ChevronDown, LayoutGrid, Play, List } 
 import { useAnimeTitle } from '@/context/TitleLanguageContext';
 
 export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode }: any) {
-  const { getTitle } = useAnimeTitle(); // Memanggil Hook Bahasa
+  const { getTitle } = useAnimeTitle(); 
   
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -42,6 +42,26 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
 
   const currentLabel = chunks.length > 0 ? getChunkLabel(currentChunkIndex, chunks[currentChunkIndex]) : "No EPS";
 
+  // ==========================================
+  // AUTO-SYNC: Pindah Tab/Grup Sesuai Episode Aktif
+  // ==========================================
+  useEffect(() => {
+    if (currentEp && chunks.length > 0) {
+      const targetChunkIndex = chunks.findIndex(chunk => 
+        chunk.some((ep: any) => {
+          const epId = ep.id ? ep.id.split('?ep=')[1] : String(ep.episode_no);
+          return String(epId) === String(currentEp) || (ep.id && ep.id.includes(String(currentEp)));
+        })
+      );
+      
+      // Jika ketemu grupnya dan bukan grup yang sedang aktif, pindahkan
+      if (targetChunkIndex !== -1 && targetChunkIndex !== currentChunkIndex) {
+        setCurrentChunkIndex(targetChunkIndex);
+      }
+    }
+  }, [currentEp, chunks]); // Sengaja tidak memasukkan currentChunkIndex agar tidak bentrok dengan klik manual user
+
+  // Dropdown click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -128,7 +148,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
               {filteredEpisodes.map((ep: any) => {
                 const epId = ep.id ? ep.id.split('?ep=')[1] : ep.episode_no;
-                const isActive = currentEp === epId;
+                // PERUBAHAN: String Check agar lebih aman
+                const isActive = String(currentEp) === String(epId) || (ep.id && ep.id.includes(String(currentEp)));
 
                 return (
                   <button
@@ -152,7 +173,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
             <div className="flex flex-col gap-1.5">
               {filteredEpisodes.map((ep: any) => {
                 const epId = ep.id ? ep.id.split('?ep=')[1] : ep.episode_no;
-                const isActive = currentEp === epId;
+                // PERUBAHAN: String Check
+                const isActive = String(currentEp) === String(epId) || (ep.id && ep.id.includes(String(currentEp)));
                 const displayTitle = getTitle(ep.title, ep.japanese_title);
 
                 return (
@@ -200,7 +222,8 @@ export default function EpisodeList({ episodes = [], currentEp, onSelectEpisode 
             <div className="flex flex-col gap-2">
               {filteredEpisodes.map((ep: any) => {
                 const epId = ep.id ? ep.id.split('?ep=')[1] : ep.episode_no;
-                const isActive = currentEp === epId;
+                // PERUBAHAN: String Check
+                const isActive = String(currentEp) === String(epId) || (ep.id && ep.id.includes(String(currentEp)));
                 const displayTitle = getTitle(ep.title, ep.japanese_title);
 
                 return (

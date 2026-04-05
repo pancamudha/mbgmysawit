@@ -31,6 +31,7 @@ export default function WatchClient({ slug, initialEpNumber }: { slug: string; i
   const [episodes, setEpisodes] = useState<any[]>([]); 
   const [currentEp, setCurrentEp] = useState<string | null>(null);
   const [anilistId, setAnilistId] = useState<number | null>(null);
+  const [isTBD, setIsTBD] = useState(false); // STATE BARU UNTUK TBD
 
   // Player Preferences States
   const [autoPlay, setAutoPlay] = useState(false);
@@ -124,11 +125,30 @@ export default function WatchClient({ slug, initialEpNumber }: { slug: string; i
                if (targetEp) {
                  setCurrentEp(targetEp.id.split('?ep=')[1]);
                } else {
-                 setCurrentEp(bowoEpisodes[0].id.split('?ep=')[1]); // Fallback jika nomor episode tidak ada
+                 // PERUBAHAN: Jika episode (misal 13) belum ada, cari episode di bawahnya (misal 12)
+                 const targetNum = Number(initialEpNumber);
+                 const epsBelow = bowoEpisodes.filter((e: any) => Number(e.episode_no) < targetNum);
+                 
+                 let fallbackEp;
+                 if (epsBelow.length > 0) {
+                   // Urutkan dari yang terbesar untuk mendapat episode paling dekat (terbaru)
+                   epsBelow.sort((a: any, b: any) => Number(b.episode_no) - Number(a.episode_no));
+                   fallbackEp = epsBelow[0];
+                 } else {
+                   // Jika gagal (misal request eps 0), ambil episode terbaru dari semua yang ada
+                   const sortedAll = [...bowoEpisodes].sort((a: any, b: any) => Number(b.episode_no) - Number(a.episode_no));
+                   fallbackEp = sortedAll[0] || bowoEpisodes[0];
+                 }
+                 
+                 setCurrentEp(fallbackEp.id.split('?ep=')[1]);
+                 router.replace(`/watch/${slug}/episode/${fallbackEp.episode_no}`); // Mengganti URL di browser
                }
             } else {
                setCurrentEp(bowoEpisodes[0].id.split('?ep=')[1]);
             }
+          } else {
+            // LOGIKA TBD: Jika tidak ada episode sama sekali dari API
+            setIsTBD(true);
           }
         }
       } catch (error) {
@@ -139,7 +159,7 @@ export default function WatchClient({ slug, initialEpNumber }: { slug: string; i
     };
     
     fetchBaseEpisodes();
-  }, [slug, initialEpNumber]);
+  }, [slug, initialEpNumber, router]);
 
   // ==========================================
   // HANDLERS
@@ -177,6 +197,7 @@ export default function WatchClient({ slug, initialEpNumber }: { slug: string; i
           autoNext={autoNext}
           onNextEpisode={handleNextEpisode}
           activePlayer={activePlayer} 
+          isTBD={isTBD} // PROPS BARU UNTUK TBD
         />
         
         <WatchControls 

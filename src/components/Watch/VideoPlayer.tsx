@@ -18,6 +18,7 @@ interface VideoPlayerProps {
   onNextEpisode?: () => void;
   activePlayer: string; 
   currentProvider?: string;
+  isTBD?: boolean;
 }
 
 export default function VideoPlayer({ 
@@ -29,7 +30,8 @@ export default function VideoPlayer({
   autoNext, 
   onNextEpisode,
   activePlayer,
-  currentProvider 
+  currentProvider,
+  isTBD
 }: VideoPlayerProps) {
   
   const artRef = useRef<HTMLDivElement>(null);
@@ -56,7 +58,7 @@ export default function VideoPlayer({
   // 1. ARTPLAYER INTEGRATION
   // ==========================================
   useEffect(() => {
-    if (activePlayer !== 'artplayer' || !artRef.current || !proxyUrl || loading) return;
+    if (activePlayer !== 'artplayer' || !artRef.current || !proxyUrl || loading || isTBD) return;
 
     const art = new Artplayer({
       container: artRef.current,
@@ -114,13 +116,13 @@ export default function VideoPlayer({
     });
 
     return () => { if (art && art.destroy) art.destroy(false); };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, episodeData, tracks, streamData]);
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, episodeData, tracks, streamData, isTBD]);
 
   // ==========================================
   // 2. PLYR INTEGRATION
   // ==========================================
   useEffect(() => {
-    if (activePlayer !== 'plyr' || !plyrRef.current || !proxyUrl || loading) return;
+    if (activePlayer !== 'plyr' || !plyrRef.current || !proxyUrl || loading || isTBD) return;
 
     const video = plyrRef.current;
     let hls: Hls;
@@ -166,13 +168,13 @@ export default function VideoPlayer({
       if (hls) hls.destroy();
       if (player) player.destroy();
     };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]);
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData, isTBD]);
 
   // ==========================================
   // 3. VIDEO.JS INTEGRATION
   // ==========================================
   useEffect(() => {
-    if (activePlayer !== 'videojs' || !vjsRef.current || !proxyUrl || loading) return;
+    if (activePlayer !== 'videojs' || !vjsRef.current || !proxyUrl || loading || isTBD) return;
 
     const videoElement = document.createElement("video-js");
     videoElement.classList.add('vjs-big-play-centered');
@@ -217,8 +219,30 @@ export default function VideoPlayer({
         vjsPlayerRef.current = null;
       }
     };
-  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData]);
+  }, [activePlayer, proxyUrl, loading, autoPlay, autoSkip, autoNext, intro, outro, onNextEpisode, streamData, isTBD]);
 
+  // ==========================================
+  // RENDER TBD UI JIKA EPISODE KOSONG SAMA SEKALI
+  // ==========================================
+  if (isTBD) {
+    return (
+      <div className="w-full flex flex-col gap-0 min-w-0">
+        <div className="relative w-full aspect-video bg-[#0A0A0B] rounded-xl overflow-hidden shadow-2xl border border-white/10 flex flex-col items-center justify-center p-6 text-center">
+          {/* Teks TBD diperbesar drastis, warna putih, dan jarak dirapatkan (leading-none & mb-0) */}
+          <h1 className="text-[120px] md:text-[180px] font-black text-white leading-none mb-0 tracking-tight">
+            TBD
+          </h1>
+          <p className="text-[#8C8C8C] max-w-md text-sm md:text-base font-medium mt-1">
+            No episodes have been released yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER NORMAL VIDEO PLAYER
+  // ==========================================
   return (
     <div className="w-full flex flex-col gap-0 min-w-0">
       <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10">
