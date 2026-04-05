@@ -129,7 +129,7 @@ export default function AiringSchedule({ schedule }: AiringScheduleProps) {
 
           return (
             <Link
-              href={`/anime/${anime.id}?ep=${anime.episode_no}`}
+              href={`/watch/${anime.id}/episode/${anime.episode_no}`}
               key={`${anime.id}-${idx}`}
               className="group flex items-center justify-between py-3.5 sm:py-4 border-b border-[#2A2A2E]/60 hover:border-[#4A4A4E] transition-colors gap-4 sm:gap-5"
             >
