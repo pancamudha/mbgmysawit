@@ -41,6 +41,7 @@ export function AnimeCardClient({ anime, fallbackYear }: { anime: AnimeItem, fal
           fill
           sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 16vw"
           className="object-cover"
+          unoptimized
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 group-active:bg-black/50 transition-colors duration-300 z-20 flex items-center justify-center">
           <svg className="w-12 h-12 sm:w-14 sm:h-14 text-white opacity-0 group-hover:opacity-100 group-active:opacity-100 hover:scale-120 transition-all duration-300 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
